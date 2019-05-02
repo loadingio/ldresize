@@ -108,6 +108,11 @@ var slice$ = [].slice;
         return nr[y * 2 + x].setAttribute(it[0], it[1]);
       }
     };
+    this.downSim = function(n, e){
+      document.addEventListener('mouseup', mouse.up);
+      document.addEventListener('mousemove', mouse.move);
+      return mouse.ix = e.clientX, mouse.iy = e.clientY, mouse.nx = 1, mouse.ny = 1, mouse.n = n, mouse;
+    };
     mouse = {
       up: function(e){
         return [['mouseup', mouse.p], ['mousemove', mouse.move]].map(function(it){
@@ -133,11 +138,17 @@ var slice$ = [].slice;
         });
       },
       move: function(e){
-        var ref$, cx, cy, nx, ny, box, p2, v, len, a, p2p, na, p1, p1p, v2, len2, cp;
+        var ref$, cx, cy, nx, ny, box, dx, dy, p2, v, len, a, p2p, na, p1, p1p, v2, len2, cp;
         ref$ = [e.clientX, e.clientY, mouse.nx, mouse.ny], cx = ref$[0], cy = ref$[1], nx = ref$[2], ny = ref$[3];
         box = host.getBoundingClientRect();
         if (nx === 1 && ny === 1) {
-          ref$ = [dim.x + cx - mouse.ix, dim.y + cy - mouse.iy], dim.x = ref$[0], dim.y = ref$[1];
+          ref$ = [cx - mouse.ix, cy - mouse.iy], dx = ref$[0], dy = ref$[1];
+          if (e.shiftKey) {
+            ref$ = Math.abs(dx) > Math.abs(dy)
+              ? [dx, 0]
+              : [0, dy], dx = ref$[0], dy = ref$[1];
+          }
+          ref$ = [dim.x + dx, dim.y + dy], dim.x = ref$[0], dim.y = ref$[1];
           mouse.ix = cx;
           mouse.iy = cy;
           return draw();
@@ -274,6 +285,24 @@ var slice$ = [].slice;
       });
       return this.draw();
     },
+    move: function(n, e){
+      return this.downSim(n, e);
+    }
+    /*
+    set: (t = {}, delta = false) ->
+      if delta =>
+        if t.t and t.t.x => @dim.t.x += t.t.x
+        if t.t and t.t.y => @dim.t.y += t.t.y
+        if t.r => @dim.r += t.r
+        if t.s and t.s.x => @dim.s.x += t.s.x
+        if t.s and t.s.y => @dim.s.y += t.s.y
+      else
+        if t.t => @dim.t <<< t.t
+        if t.r => @dim.r = t.r
+        if t.s => @dim.s <<< t.s
+      @draw true
+      @attach @tgt
+    */,
     dim: function(){
       return this.dim;
     },

@@ -4,6 +4,11 @@ ldr.attach path
 
 local = {}
 svg.addEventListener \mousedown, (e) ->
+  node = e.target
+  if node.classList and node.classList.contains \ctrl => return
+  if ldr.tgt == node => ldr.move node, e
+  local.node = node = e.target
+  local <<< ix: e.clientX, iy: e.clientY
   local.move = false
 svg.addEventListener \mousemove, (e) ->
   local.move = true

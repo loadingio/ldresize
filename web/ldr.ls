@@ -112,6 +112,11 @@
       #   tx = e + sx * cx * cos(r) - sy * cy * sin(r) - cx
       #   ty = f + sy * cy * sin(r) + sy * cy * cos(r) - cy
 
+    @down-sim = (n, e) ->
+      document.addEventListener \mouseup, mouse.up
+      document.addEventListener \mousemove, mouse.move
+      mouse <<< ix: e.clientX, iy: e.clientY, nx: 1, ny: 1, n: n
+
     # Mouse event handler
     mouse = do
       up: (e) -> [[\mouseup, mouse.p], [\mousemove, mouse.move]].map -> document.removeEventListener it.0, it.1
@@ -138,7 +143,9 @@
 
         # nx = ny = 1 => central ctrl node, use for moving around
         if nx == 1 and ny == 1 => 
-          [dim.x, dim.y] = [dim.x + cx - mouse.ix, dim.y + cy - mouse.iy]
+          [dx, dy] = [cx - mouse.ix, cy - mouse.iy]
+          if e.shiftKey => [dx,dy] = if Math.abs(dx) > Math.abs(dy) => [dx, 0] else [0, dy]
+          [dim.x, dim.y] = [dim.x + dx, dim.y + dy]
           mouse <<< ix: cx, iy: cy
           return draw!
 
@@ -280,7 +287,23 @@
 
       # draw will take care of transform by calcing it from @dim. 
       @draw!
-
+    move: (n, e) -> 
+      @down-sim n, e
+    /*
+    set: (t = {}, delta = false) ->
+      if delta =>
+        if t.t and t.t.x => @dim.t.x += t.t.x
+        if t.t and t.t.y => @dim.t.y += t.t.y
+        if t.r => @dim.r += t.r
+        if t.s and t.s.x => @dim.s.x += t.s.x
+        if t.s and t.s.y => @dim.s.y += t.s.y
+      else
+        if t.t => @dim.t <<< t.t
+        if t.r => @dim.r = t.r
+        if t.s => @dim.s <<< t.s
+      @draw true
+      @attach @tgt
+    */
     dim: -> @dim
     detach: -> 
       @tgt = null

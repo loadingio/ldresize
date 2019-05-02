@@ -7,6 +7,17 @@ path = ld$.find(document, 'path', 0);
 ldr.attach(path);
 local = {};
 svg.addEventListener('mousedown', function(e){
+  var node;
+  node = e.target;
+  if (node.classList && node.classList.contains('ctrl')) {
+    return;
+  }
+  if (ldr.tgt === node) {
+    ldr.move(node, e);
+  }
+  local.node = node = e.target;
+  local.ix = e.clientX;
+  local.iy = e.clientY;
   return local.move = false;
 });
 svg.addEventListener('mousemove', function(e){
