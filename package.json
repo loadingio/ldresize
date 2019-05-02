@@ -1,0 +1,23 @@
+{
+  "author": "Kirby Wu",
+  "name": "ldResize",
+  "license": "MIT",
+  "description": "Resize widget for anything",
+  "version": "0.0.1",
+  "homepage": "https://github.com/loadingio/ldResize",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/loadingio/ldResize"
+  },
+  "engines": {
+    "node": ">=0.12.6",
+    "npm": ">=1.2.2"
+  },
+  "devDependencies": {
+    "LiveScript": ">=1.2.0",
+    "chokidar": "^3.0.0",
+    "pug": "^2.0.3",
+    "stylus": "^0.54.5",
+    "uglifycss": "=0.0.29"
+  }
+}
