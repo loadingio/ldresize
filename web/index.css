@@ -15,3 +15,6 @@
   fill: #fff;
   cursor: move;
 }
+.ctrl.range {
+  pointer-events: none;
+}

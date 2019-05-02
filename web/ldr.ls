@@ -34,7 +34,7 @@
           ..setAttribute \fill, cs[i]
       g: ng = document.createElementNS svg, \g
     @n.b = nb = document.createElementNS svg, \rect
-    nb.classList.add \range
+    nb.classList.add \ctrl, \range
     ng.appendChild nb
     nr.map -> ng.appendChild it
     ns.map -> ng.appendChild it
@@ -163,6 +163,7 @@
           na = Math.acos(v.0 / len)
           if v.1 < 0 => na = 2 * Math.PI - na
           dim.r = dim.r + (na - a)
+          if e.shiftKey => dim.r = Math.floor(dim.r / (Math.PI / 8)) * (Math.PI / 8)
           return draw!
 
         # scaling ctrl nodes ( .ctrl.s )
@@ -190,6 +191,19 @@
 
           # 我們期望被拖動的點移到 p2p
           p2p = [cx - box.x, cy - box.y]
+
+          # 若按住 shift, 則提供等比例縮放
+          if e.shiftKey =>
+            # 取得 p2 於螢幕上的點減中心點的單位向量
+            v = [Math.cos(a + Math.PI), Math.sin(a + Math.PI)]
+            # 預計移至的位置其與中心點間的距離
+            v2 = [p2p.0 - dim.x - dim.w / 2, p2p.1 - dim.y - dim.h / 2]
+            len2 = Math.sqrt(v2.0 ** 2 + v2.1 ** 2)
+            # 用未更新的 p2 點向量乘上滑鼠點與中心的距離, 來保持比例固定
+            p2p = [
+              dim.x + dim.w / 2 + v.0 * len2
+              dim.y + dim.h / 2 + v.1 * len2
+            ]
 
           # p2p 與 p1p 的中心為 cp
           cp = [(p1p.0 + p2p.0)/2, (p1p.1 + p2p.1)/2]
@@ -234,6 +248,7 @@
     attach: (n) ->
       # store attached node n in tgt, and shorthand dim to d
       [@tgt,d] = [n, @dim]
+      @n.g.style.display = \block
  
       # we need a clean bbox for n without transform. store it in @dim.box
       n-alt = n.cloneNode true
@@ -250,7 +265,7 @@
       # we then restore t,r,s from it.
       # check draw function for detail explanation
       t = n.getAttribute(\transform) or getComputedStyle(n).transform
-      m = n.transform.baseVal.consolidate!matrix
+      m = (n.transform.baseVal.consolidate! or {})matrix or {a:1,b:0,c:0,d:1,e:0,f:0}
       d.s <<< x: Math.sqrt(m.a ** 2 + m.b ** 2), y: Math.sqrt(m.c ** 2 + m.d ** 2)
       d.r = Math.acos(m.a / d.s.x)
       d.t <<< do
@@ -268,6 +283,9 @@
 
     dim: -> @dim
     detach: -> 
+      @tgt = null
+      @n.g.style.display = \none
+
 
   if module? => module.exports = ldResize
   if window => window.ldResize = ldResize

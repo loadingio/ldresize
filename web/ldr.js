@@ -54,7 +54,7 @@ var slice$ = [].slice;
       g: ng = document.createElementNS(svg, 'g')
     };
     this.n.b = nb = document.createElementNS(svg, 'rect');
-    nb.classList.add('range');
+    nb.classList.add('ctrl', 'range');
     ng.appendChild(nb);
     nr.map(function(it){
       return ng.appendChild(it);
@@ -133,7 +133,7 @@ var slice$ = [].slice;
         });
       },
       move: function(e){
-        var ref$, cx, cy, nx, ny, box, p2, v, len, a, p2p, na, p1, p1p, cp;
+        var ref$, cx, cy, nx, ny, box, p2, v, len, a, p2p, na, p1, p1p, v2, len2, cp;
         ref$ = [e.clientX, e.clientY, mouse.nx, mouse.ny], cx = ref$[0], cy = ref$[1], nx = ref$[2], ny = ref$[3];
         box = host.getBoundingClientRect();
         if (nx === 1 && ny === 1) {
@@ -159,6 +159,9 @@ var slice$ = [].slice;
             na = 2 * Math.PI - na;
           }
           dim.r = dim.r + (na - a);
+          if (e.shiftKey) {
+            dim.r = Math.floor(dim.r / (Math.PI / 8)) * (Math.PI / 8);
+          }
           return draw();
         }
         if (mouse.n.classList.contains('s')) {
@@ -173,6 +176,12 @@ var slice$ = [].slice;
           a += dim.r;
           p1p = [dim.x + dim.w / 2 + len * Math.cos(a), dim.y + dim.h / 2 + len * Math.sin(a)];
           p2p = [cx - box.x, cy - box.y];
+          if (e.shiftKey) {
+            v = [Math.cos(a + Math.PI), Math.sin(a + Math.PI)];
+            v2 = [p2p[0] - dim.x - dim.w / 2, p2p[1] - dim.y - dim.h / 2];
+            len2 = Math.sqrt(Math.pow(v2[0], 2) + Math.pow(v2[1], 2));
+            p2p = [dim.x + dim.w / 2 + v[0] * len2, dim.y + dim.h / 2 + v[1] * len2];
+          }
           cp = [(p1p[0] + p2p[0]) / 2, (p1p[1] + p2p[1]) / 2];
           v = [p2p[0] - cp[0], p2p[1] - cp[1]];
           len = Math.sqrt(v[0] * v[0] + v[1] * v[1]);
@@ -226,6 +235,7 @@ var slice$ = [].slice;
     attach: function(n){
       var ref$, d, nAlt, b, rb, box, cx, cy, t, m;
       ref$ = [n, this.dim], this.tgt = ref$[0], d = ref$[1];
+      this.n.g.style.display = 'block';
       nAlt = n.cloneNode(true);
       nAlt.setAttribute('transform', '');
       document.querySelector('#svg').appendChild(nAlt);
@@ -240,7 +250,14 @@ var slice$ = [].slice;
       };
       ref$ = [box.x + box.w / 2, box.y + box.h / 2], cx = ref$[0], cy = ref$[1];
       t = n.getAttribute('transform') || getComputedStyle(n).transform;
-      m = n.transform.baseVal.consolidate().matrix;
+      m = (n.transform.baseVal.consolidate() || {}).matrix || {
+        a: 1,
+        b: 0,
+        c: 0,
+        d: 1,
+        e: 0,
+        f: 0
+      };
       ref$ = d.s;
       ref$.x = Math.sqrt(Math.pow(m.a, 2) + Math.pow(m.b, 2));
       ref$.y = Math.sqrt(Math.pow(m.c, 2) + Math.pow(m.d, 2));
@@ -260,7 +277,10 @@ var slice$ = [].slice;
     dim: function(){
       return this.dim;
     },
-    detach: function(){}
+    detach: function(){
+      this.tgt = null;
+      return this.n.g.style.display = 'none';
+    }
   });
   if (typeof module != 'undefined' && module !== null) {
     module.exports = ldResize;
