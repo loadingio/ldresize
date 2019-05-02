@@ -1,0 +1,17 @@
+.range {
+  stroke: #444;
+  stroke-width: 1;
+  fill: none;
+}
+.ctrl {
+  stroke: #222;
+  stroke-width: 1;
+}
+.ctrl.r {
+  cursor: url("rotate.cur"), auto;
+  opacity: 0.1;
+}
+.ctrl.t {
+  fill: #fff;
+  cursor: move;
+}
