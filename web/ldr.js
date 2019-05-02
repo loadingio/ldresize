@@ -8,14 +8,23 @@ var slice$ = [].slice;
     return 180 * v / Math.PI;
   };
   ldResize = function(opt){
-    var host, dim, ns, nr, ng, nb, draw, mouse, this$ = this;
+    var host, root, filter, dim, ns, nr, ng, nb, draw, mouse, this$ = this;
     opt == null && (opt = {});
+    host = !opt.host
+      ? opt.root
+      : opt.host;
     import$(this, {
       opt: opt,
       evtHandler: {},
-      host: host = typeof opt.host === 'string'
-        ? document.querySelector(opt.host)
+      host: host = typeof host === 'string'
+        ? document.querySelector(host)
         : opt.host,
+      root: opt.root ? root = typeof opt.root === 'string'
+        ? document.querySelector(opt.root)
+        : opt.root : void 8,
+      filter: filter = opt.filter || function(){
+        return true;
+      },
       dim: dim = {
         box: null,
         x: 100,
@@ -37,7 +46,7 @@ var slice$ = [].slice;
       s: ns = [0, 1, 2, 3, 4, 5, 6, 7, 8].map(function(d, i){
         var x$, n;
         x$ = n = document.createElementNS(svg, 'rect');
-        x$.classList.add('ctrl', 's');
+        x$.classList.add('ldr-ctrl', 's');
         x$.setAttribute('data-nx', i % 3);
         x$.setAttribute('data-ny', Math.floor(i / 3));
         return x$;
@@ -45,16 +54,21 @@ var slice$ = [].slice;
       r: nr = [0, 1, 2, 3].map(function(d, i){
         var x$, n;
         x$ = n = document.createElementNS(svg, 'rect');
-        x$.classList.add('ctrl', 'r');
+        x$.classList.add('ldr-ctrl', 'r');
         x$.setAttribute('data-nx', 2 * (i % 2));
         x$.setAttribute('data-ny', 2 * Math.floor(i / 2));
-        x$.setAttribute('fill', cs[i]);
+        if (opt.visibleCtrlR) {
+          x$.setAttribute('fill', cs[i]);
+        }
+        if (opt.visibleCtrlR) {
+          x$.style.opacity(0.5);
+        }
         return x$;
       }),
       g: ng = document.createElementNS(svg, 'g')
     };
     this.n.b = nb = document.createElementNS(svg, 'rect');
-    nb.classList.add('ctrl', 'range');
+    nb.classList.add('ldr-ctrl', 'bbox');
     ng.appendChild(nb);
     nr.map(function(it){
       return ng.appendChild(it);
@@ -119,23 +133,46 @@ var slice$ = [].slice;
           return document.removeEventListener(it[0], it[1]);
         });
       },
-      down: function(e){
+      down: function(e){},
+      downRoot: function(e){
+        var n;
+        if (!((n = e.target) && n.classList && !n.classList.contains('ldr-ctrl') && filter(n) && n !== root)) {
+          return this$.detach();
+        }
+        document.addEventListener('mouseup', mouse.up);
+        document.addEventListener('mousemove', mouse.move);
+        mouse.ix = e.clientX;
+        mouse.iy = e.clientY;
+        mouse.nx = 1;
+        mouse.ny = 1;
+        mouse.n = n;
+        if (!this$.tgt) {
+          return this$.attach(n);
+        }
+      },
+      downHost: function(e){
         var n, ref$, nx, ny;
         if (!((n = e.target) && e.target.classList)) {
           return;
         }
-        document.addEventListener('mouseup', mouse.up);
-        document.addEventListener('mousemove', mouse.move);
-        ref$ = ['data-nx', 'data-ny'].map(function(k){
-          return +n.getAttribute(k);
-        }), nx = ref$[0], ny = ref$[1];
-        return import$(mouse, {
-          ix: e.clientX,
-          iy: e.clientY,
-          nx: nx,
-          ny: ny,
-          n: n
-        });
+        if (n.classList.contains('ldr-ctrl')) {
+          document.addEventListener('mouseup', mouse.up);
+          document.addEventListener('mousemove', mouse.move);
+          ref$ = ['data-nx', 'data-ny'].map(function(k){
+            return +n.getAttribute(k);
+          }), nx = ref$[0], ny = ref$[1];
+          return import$(mouse, {
+            ix: e.clientX,
+            iy: e.clientY,
+            nx: nx,
+            ny: ny,
+            n: n
+          });
+        } else if (root === host) {
+          return mouse.downRoot(e);
+        } else {
+          return this$.detach();
+        }
       },
       move: function(e){
         var ref$, cx, cy, nx, ny, box, dx, dy, p2, v, len, a, p2p, na, p1, p1p, v2, len2, cp;
@@ -222,11 +259,15 @@ var slice$ = [].slice;
           if (ny === 2) {
             ref$ = [(ref$ = p2[1] - p1[1]) > 0 ? ref$ : 0, p1[1]], dim.h = ref$[0], dim.y = ref$[1];
           }
+          this$.fire('resize', this$.dim);
           return draw();
         }
       }
     };
-    host.addEventListener('mousedown', mouse.down);
+    host.addEventListener('mousedown', mouse.downHost);
+    if (root && host !== root) {
+      root.addEventListener('mousedown', mouse.downRoot);
+    }
     return this;
   };
   ldResize.prototype = import$(Object.create(Object.prototype), {
@@ -285,25 +326,41 @@ var slice$ = [].slice;
       });
       return this.draw();
     },
-    move: function(n, e){
-      return this.downSim(n, e);
-    }
-    /*
-    set: (t = {}, delta = false) ->
-      if delta =>
-        if t.t and t.t.x => @dim.t.x += t.t.x
-        if t.t and t.t.y => @dim.t.y += t.t.y
-        if t.r => @dim.r += t.r
-        if t.s and t.s.x => @dim.s.x += t.s.x
-        if t.s and t.s.y => @dim.s.y += t.s.y
-      else
-        if t.t => @dim.t <<< t.t
-        if t.r => @dim.r = t.r
-        if t.s => @dim.s <<< t.s
-      @draw true
-      @attach @tgt
-    */,
-    dim: function(){
+    set: function(t, delta){
+      t == null && (t = {});
+      delta == null && (delta = false);
+      if (delta) {
+        if (t.t && t.t.x) {
+          this.dim.t.x += t.t.x;
+        }
+        if (t.t && t.t.y) {
+          this.dim.t.y += t.t.y;
+        }
+        if (t.r) {
+          this.dim.r += t.r;
+        }
+        if (t.s && t.s.x) {
+          this.dim.s.x += t.s.x;
+        }
+        if (t.s && t.s.y) {
+          this.dim.s.y += t.s.y;
+        }
+      } else {
+        if (t.t) {
+          import$(this.dim.t, t.t);
+        }
+        if (t.r) {
+          this.dim.r = t.r;
+        }
+        if (t.s) {
+          import$(this.dim.s, t.s);
+        }
+      }
+      this.draw(true);
+      this.attach(this.tgt);
+      return this.fire('resize', this.dim);
+    },
+    get: function(){
       return this.dim;
     },
     detach: function(){

@@ -5,10 +5,13 @@
 
   ldResize = (opt = {}) ->
     # initialization
+    host = if !opt.host => opt.root else opt.host
     @ <<< do
       opt: opt, evt-handler: {}
       # host: where the resize widgets host in.
-      host: host = if typeof(opt.host) == \string => document.querySelector(opt.host) else opt.host
+      host: host = if typeof(host) == \string => document.querySelector(host) else opt.host
+      root: (root = if typeof(opt.root) == \string => document.querySelector(opt.root) else opt.root) if opt.root
+      filter: filter = opt.filter or (-> true)
       # dimension / affine transformation for this ldResize object.
       # set via attach, clean via detach
       dim: dim = do
@@ -23,18 +26,19 @@
     @n = do
       s: ns = [0 to 8].map (d,i) ->
         n = document.createElementNS svg, \rect
-          ..classList.add \ctrl, \s
+          ..classList.add \ldr-ctrl, \s
           ..setAttribute \data-nx, i % 3
           ..setAttribute \data-ny, Math.floor(i/3)
       r: nr = [0 to 3].map (d,i) ->
         n = document.createElementNS svg, \rect
-          ..classList.add \ctrl, \r
+          ..classList.add \ldr-ctrl, \r
           ..setAttribute \data-nx, 2 * (i % 2)
           ..setAttribute \data-ny, 2 * Math.floor(i/2)
-          ..setAttribute \fill, cs[i]
+          ..setAttribute \fill, cs[i] if opt.visible-ctrl-r
+          ..style.opacity 0.5 if opt.visible-ctrl-r
       g: ng = document.createElementNS svg, \g
     @n.b = nb = document.createElementNS svg, \rect
-    nb.classList.add \ctrl, \range
+    nb.classList.add \ldr-ctrl, \bbox
     ng.appendChild nb
     nr.map -> ng.appendChild it
     ns.map -> ng.appendChild it
@@ -121,22 +125,36 @@
     mouse = do
       up: (e) -> [[\mouseup, mouse.p], [\mousemove, mouse.move]].map -> document.removeEventListener it.0, it.1
       down: (e) ->
-        if !((n = e.target) and e.target.classList) => return
+      down-root: (e) ~>
+        if !(
+          (n = e.target) and n.classList and 
+          !n.classList.contains(\ldr-ctrl) and filter(n) and
+          n != root
+        ) => return @detach!
         document.addEventListener \mouseup, mouse.up
         document.addEventListener \mousemove, mouse.move
-        [nx,ny] = <[data-nx data-ny]>.map (k) -> +n.getAttribute k
-        mouse <<< do
-          # initial mouse point when mouse down. use to calc mouse offset.
-          ix: e.clientX, iy: e.clientY 
-          # ctrl node idx ( x and y ). it's a simple way to identify the node's position
-          # nx: 0 1 2    ny: 0 0 0
-          #     0 1 2        1 1 1
-          #     0 1 2        2 2 2
-          nx: nx, ny: ny 
-          # ctrl node
-          n: n 
+        mouse <<< ix: e.clientX, iy: e.clientY, nx: 1, ny: 1, n: n
+        if !@tgt => @attach n
+      down-host: (e) ~>
+        if !((n = e.target) and e.target.classList) => return
+        if n.classList.contains(\ldr-ctrl) =>
+          document.addEventListener \mouseup, mouse.up
+          document.addEventListener \mousemove, mouse.move
+          [nx,ny] = <[data-nx data-ny]>.map (k) -> +n.getAttribute k
+          mouse <<< do
+            # initial mouse point when mouse down. use to calc mouse offset.
+            ix: e.clientX, iy: e.clientY 
+            # ctrl node idx ( x and y ). it's a simple way to identify the node's position
+            # nx: 0 1 2    ny: 0 0 0
+            #     0 1 2        1 1 1
+            #     0 1 2        2 2 2
+            nx: nx, ny: ny 
+            # ctrl node
+            n: n 
+        else if root == host => mouse.down-root(e) # same container so we can share a common handler
+        else @detach!
 
-      move: (e) ->
+      move: (e) ~>
         # current mouse position (cx, cy) and ctrl node idxes (nx, ny)
         [cx, cy, nx, ny] = [e.clientX, e.clientY, mouse.nx, mouse.ny]
         box = host.getBoundingClientRect!
@@ -149,7 +167,7 @@
           mouse <<< ix: cx, iy: cy
           return draw!
 
-        # rotating ctrl nodes ( .ctrl.r )
+        # rotating ctrl nodes ( .ldr-ctrl.r )
         if mouse.n.classList.contains \r =>
           # 點擊的點
           p2 = [ dim.x + dim.w * ( nx ) / 2, dim.y + dim.h * ( ny ) / 2 ]
@@ -173,7 +191,7 @@
           if e.shiftKey => dim.r = Math.floor(dim.r / (Math.PI / 8)) * (Math.PI / 8)
           return draw!
 
-        # scaling ctrl nodes ( .ctrl.s )
+        # scaling ctrl nodes ( .ldr-ctrl.s )
         if mouse.n.classList.contains \s =>
           # 對面的點
           p1 = [ dim.x + dim.w * ( 2 - nx ) / 2, dim.y + dim.h * ( 2 - ny ) / 2 ]
@@ -244,9 +262,12 @@
           if nx == 2 => [dim.w,dim.x] = [p2.0 - p1.0 >? 0, p1.0]
           if ny == 2 => [dim.h,dim.y] = [p2.1 - p1.1 >? 0, p1.1]
 
+          @fire \resize, @dim
           return draw!
 
-    host.addEventListener \mousedown, mouse.down
+    host.addEventListener \mousedown, mouse.down-host
+    if root and host != root => root.addEventListener \mousedown, mouse.down-root
+
     @
 
   ldResize.prototype = Object.create(Object.prototype) <<< do
@@ -287,9 +308,7 @@
 
       # draw will take care of transform by calcing it from @dim. 
       @draw!
-    move: (n, e) -> 
-      @down-sim n, e
-    /*
+
     set: (t = {}, delta = false) ->
       if delta =>
         if t.t and t.t.x => @dim.t.x += t.t.x
@@ -303,8 +322,9 @@
         if t.s => @dim.s <<< t.s
       @draw true
       @attach @tgt
-    */
-    dim: -> @dim
+      @fire \resize, @dim
+
+    get: -> @dim
     detach: -> 
       @tgt = null
       @n.g.style.display = \none
