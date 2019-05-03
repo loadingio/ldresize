@@ -12,6 +12,7 @@
       host: host = if typeof(host) == \string => document.querySelector(host) else opt.host
       root: (root = if typeof(opt.root) == \string => document.querySelector(opt.root) else opt.root) if opt.root
       filter: filter = opt.filter or (-> true)
+      mouse-down: opt.mouse-down or null
       # dimension / affine transformation for this ldResize object.
       # set via attach, clean via detach
       dim: dim = do
@@ -131,17 +132,15 @@
       up: (e) -> [[\mouseup, mouse.p], [\mousemove, mouse.move]].map -> document.removeEventListener it.0, it.1
       down: (e) ->
       down-root: (e) ~>
-        if !(
-          (n = e.target) and n.classList and
-          !n.classList.contains(\ldr-ctrl) and filter(n) and
-          n != root
-        ) => return @detach!
+        if !( (n = e.target) and n.classList and !n.classList.contains(\ldr-ctrl) ) => return @detach!
+        if n == root or (filter and !filter(n)) => return @detach!
         document.addEventListener \mouseup, mouse.up
         document.addEventListener \mousemove, mouse.move
         mouse <<< ix: e.clientX, iy: e.clientY, nx: 1, ny: 1, n: n
         # if nothing selected, or the selected item is not current item -> re-attach.
         # otherwise, keep working on previous attached item
-        if !(@tgt.length and (n in @tgt)) => @attach n, e.shiftKey
+        if @mouse-down => @attach @mouse-down(e)
+        else if !(@tgt.length and (n in @tgt)) => @attach n, e.shiftKey
       down-host: (e) ~>
         if !((n = e.target) and e.target.classList) => return
         if n.classList.contains(\ldr-ctrl) =>
@@ -160,6 +159,7 @@
             n: n
         else if root == host => mouse.down-root(e) # same container so we can share a common handler
         else @detach!
+        e.stopPropagation!
 
       move: (e) ~>
         # current mouse position (cx, cy) and ctrl node idxes (nx, ny)
@@ -297,9 +297,11 @@
       if !addon => @tgt = n
       else if !(n in @tgt) => @tgt ++= n
       n0 = @tgt.0
+      if !n0 => return @detach!
       @n.g.style.display = \block
 
-      rb = @host.getBoundingClientRect!
+      hb = @host.getBoundingClientRect!
+      rb = @root.getBoundingClientRect!
       if @tgt.length > 1 =>
         # target are multiple elements. we need to find outer box for them while consider their transform too.
         b = {x1: null, x2: null, y1: null, y2: null}
@@ -319,7 +321,7 @@
         @host.appendChild n-alt
         b = n-alt.getBoundingClientRect!
         n-alt.parentNode.removeChild n-alt
-        d.box = box = {x: b.x - rb.x, y: b.y - rb.y, w: b.width, h: b.height}
+        d.box = box = {x: b.x - hb.x, y: b.y - hb.y, w: b.width, h: b.height}
 
       # central point of the bbox (cx, cy)
       [cx, cy] = [box.x + box.w / 2, box.y + box.h / 2]

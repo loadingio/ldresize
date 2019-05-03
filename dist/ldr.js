@@ -26,6 +26,7 @@ var slice$ = [].slice;
       filter: filter = opt.filter || function(){
         return true;
       },
+      mouseDown: opt.mouseDown || null,
       dim: dim = {
         box: null,
         x: 100,
@@ -140,7 +141,10 @@ var slice$ = [].slice;
       down: function(e){},
       downRoot: function(e){
         var n;
-        if (!((n = e.target) && n.classList && !n.classList.contains('ldr-ctrl') && filter(n) && n !== root)) {
+        if (!((n = e.target) && n.classList && !n.classList.contains('ldr-ctrl'))) {
+          return this$.detach();
+        }
+        if (n === root || (filter && !filter(n))) {
           return this$.detach();
         }
         document.addEventListener('mouseup', mouse.up);
@@ -150,7 +154,9 @@ var slice$ = [].slice;
         mouse.nx = 1;
         mouse.ny = 1;
         mouse.n = n;
-        if (!(this$.tgt.length && in$(n, this$.tgt))) {
+        if (this$.mouseDown) {
+          return this$.attach(this$.mouseDown(e));
+        } else if (!(this$.tgt.length && in$(n, this$.tgt))) {
           return this$.attach(n, e.shiftKey);
         }
       },
@@ -165,7 +171,7 @@ var slice$ = [].slice;
           ref$ = ['data-nx', 'data-ny'].map(function(k){
             return +n.getAttribute(k);
           }), nx = ref$[0], ny = ref$[1];
-          return import$(mouse, {
+          import$(mouse, {
             ix: e.clientX,
             iy: e.clientY,
             nx: nx,
@@ -173,10 +179,11 @@ var slice$ = [].slice;
             n: n
           });
         } else if (root === host) {
-          return mouse.downRoot(e);
+          mouse.downRoot(e);
         } else {
-          return this$.detach();
+          this$.detach();
         }
+        return e.stopPropagation();
       },
       move: function(e){
         var ref$, cx, cy, nx, ny, box, dx, dy, d, p2, v, len, a, p2p, na, p1, p1p, v2, len2, cp;
@@ -291,7 +298,7 @@ var slice$ = [].slice;
       return results$;
     },
     attach: function(n, addon){
-      var ref$, d, n0, rb, b, box, nAlt, cx, cy, t, m;
+      var ref$, d, n0, hb, rb, b, box, nAlt, cx, cy, t, m;
       addon == null && (addon = false);
       ref$ = [
         this.dim, Array.isArray(n)
@@ -304,8 +311,12 @@ var slice$ = [].slice;
         this.tgt = this.tgt.concat(n);
       }
       n0 = this.tgt[0];
+      if (!n0) {
+        return this.detach();
+      }
       this.n.g.style.display = 'block';
-      rb = this.host.getBoundingClientRect();
+      hb = this.host.getBoundingClientRect();
+      rb = this.root.getBoundingClientRect();
       if (this.tgt.length > 1) {
         b = {
           x1: null,
@@ -342,8 +353,8 @@ var slice$ = [].slice;
         b = nAlt.getBoundingClientRect();
         nAlt.parentNode.removeChild(nAlt);
         d.box = box = {
-          x: b.x - rb.x,
-          y: b.y - rb.y,
+          x: b.x - hb.x,
+          y: b.y - hb.y,
           w: b.width,
           h: b.height
         };
