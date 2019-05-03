@@ -56,6 +56,10 @@ options:
      * resize - when resizing. affine transformation data provided.
 
 
+## Todo
+ * Supporting non-preserving-aspect-ratio scaling in group resizing, which needs to deal with shearing.
+   - Illustrator just expand the transform into shape. Perhaps it's an feasible approach.
+
 ## License
 
 MIT License
