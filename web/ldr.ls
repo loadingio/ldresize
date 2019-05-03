@@ -1,1 +1,1 @@
-../ldr.ls
+../src/ldr.ls

@@ -7,7 +7,7 @@
     # initialization
     host = if !opt.host => opt.root else opt.host
     @ <<< do
-      opt: opt, evt-handler: {}
+      opt: opt, evt-handler: {}, tgt: []
       # host: where the resize widgets host in.
       host: host = if typeof(host) == \string => document.querySelector(host) else opt.host
       root: (root = if typeof(opt.root) == \string => document.querySelector(opt.root) else opt.root) if opt.root
@@ -17,10 +17,13 @@
       dim: dim = do
         box: null       # initial target bounding box
         x: 100, y: 100  # initial bounding (x,y) ( left top corner )
-        w: 100, h: 100  # initial bounding box size 
+        w: 100, h: 100  # initial bounding box size
         t: x: 0, y: 0   # translation
         s: x: 0, y: 0   # scaling
         r: 0            # rotation
+
+    @host.classList.add \ldr-host
+    if @host != @root => @host.classList.add \ldr-host-standalone
 
     # DOM for ctrl nodes
     @n = do
@@ -52,7 +55,13 @@
         [\x, -dim.w / 2], [\y, -dim.h / 2]
         [\width, dim.w],  [\height, dim.h]
       ].map -> nb.setAttribute it.0, it.1
-      ng.setAttribute \transform, "translate(#{dim.x + dim.w / 2}, #{dim.y + dim.h / 2}) rotate(#{deg(dim.r or 0)})"
+
+      # ctrl group is transformed based on the transform of node inside root.
+      # so, we have to add the offset between host and root to fit to the correct position
+      d = @box-offset!
+      ng.setAttribute \transform, (
+        "translate(#{d.dx + dim.x + dim.w / 2}, #{d.dy + dim.y + dim.h / 2}) rotate(#{deg(dim.r or 0)})"
+      )
       for y from 0 to 2 =>
         for x from 0 to 2 =>
           if (x == 1 or y == 1) and !(x == 1 and y == 1) => continue
@@ -84,21 +93,22 @@
       d =  dim.s.y * Math.cos(dim.r)
       e = -dim.s.x * cx * Math.cos(dim.r) + dim.s.y * cy * Math.sin(dim.r) + cx + dim.t.x
       f = -dim.s.x * cx * Math.sin(dim.r) - dim.s.y * cy * Math.cos(dim.r) + cy + dim.t.y
-      @tgt.setAttribute \transform, "matrix(#a #b #c #d #e #f)"
 
+      # if it._ldr.transform exists, it means that we are doing a group transforming
+      # which should stack over indivisual transforms.
+      @tgt.map ->
+        it.setAttribute \transform, "matrix(#a #b #c #d #e #f) #{if it._ldr => that.transform or '' else ''}"
+
+      ######### Explanation of all these math ############
       /* if we don't want to calc matrix(a,b,c,d,e,f), we can set each transformation separatedly:
-      @tgt.setAttribute(
-        \transform,
-        [
-          "translate(#{dim.t.x} #{dim.t.y})"
-          "translate(#cx #cy)"
-          "rotate(#{deg dim.r})"
-          "scale(#{dim.s.x} #{dim.s.y})"
-          "translate(-#cx -#cy)"
-        ].join(' ')
-      )
+      [
+        "translate(#{dim.t.x} #{dim.t.y})"
+        "translate(#cx #cy)"
+        "rotate(#{deg dim.r})"
+        "scale(#{dim.s.x} #{dim.s.y})"
+        "translate(-#cx -#cy)"
+      ].join(' ')
       */
-      
       # matrix(a,b,c,d,e,f) are calculated from following transformation:
       #   translate(tx ty)
       #   translate(cx cy)
@@ -116,25 +126,22 @@
       #   tx = e + sx * cx * cos(r) - sy * cy * sin(r) - cx
       #   ty = f + sy * cy * sin(r) + sy * cy * cos(r) - cy
 
-    @down-sim = (n, e) ->
-      document.addEventListener \mouseup, mouse.up
-      document.addEventListener \mousemove, mouse.move
-      mouse <<< ix: e.clientX, iy: e.clientY, nx: 1, ny: 1, n: n
-
     # Mouse event handler
     mouse = do
       up: (e) -> [[\mouseup, mouse.p], [\mousemove, mouse.move]].map -> document.removeEventListener it.0, it.1
       down: (e) ->
       down-root: (e) ~>
         if !(
-          (n = e.target) and n.classList and 
+          (n = e.target) and n.classList and
           !n.classList.contains(\ldr-ctrl) and filter(n) and
           n != root
         ) => return @detach!
         document.addEventListener \mouseup, mouse.up
         document.addEventListener \mousemove, mouse.move
         mouse <<< ix: e.clientX, iy: e.clientY, nx: 1, ny: 1, n: n
-        if !@tgt or @tgt != n => @attach n
+        # if nothing selected, or the selected item is not current item -> re-attach.
+        # otherwise, keep working on previous attached item
+        if !(@tgt.length and (n in @tgt)) => @attach n, e.shiftKey
       down-host: (e) ~>
         if !((n = e.target) and e.target.classList) => return
         if n.classList.contains(\ldr-ctrl) =>
@@ -143,14 +150,14 @@
           [nx,ny] = <[data-nx data-ny]>.map (k) -> +n.getAttribute k
           mouse <<< do
             # initial mouse point when mouse down. use to calc mouse offset.
-            ix: e.clientX, iy: e.clientY 
+            ix: e.clientX, iy: e.clientY
             # ctrl node idx ( x and y ). it's a simple way to identify the node's position
             # nx: 0 1 2    ny: 0 0 0
             #     0 1 2        1 1 1
             #     0 1 2        2 2 2
-            nx: nx, ny: ny 
+            nx: nx, ny: ny
             # ctrl node
-            n: n 
+            n: n
         else if root == host => mouse.down-root(e) # same container so we can share a common handler
         else @detach!
 
@@ -160,12 +167,19 @@
         box = host.getBoundingClientRect!
 
         # nx = ny = 1 => central ctrl node, use for moving around
-        if nx == 1 and ny == 1 => 
+        if nx == 1 and ny == 1 =>
           [dx, dy] = [cx - mouse.ix, cy - mouse.iy]
           if e.shiftKey => [dx,dy] = if Math.abs(dx) > Math.abs(dy) => [dx, 0] else [0, dy]
           [dim.x, dim.y] = [dim.x + dx, dim.y + dy]
           mouse <<< ix: cx, iy: cy
           return draw!
+
+        # when we use cx/cy for offset from ix/iy, we don't care where cx/cy actually are. ( moving around case )
+        # but when we need the absolute position cx/cy to calculate for scaling and rotation,
+        # cx/cy from clientX/clientY are then matched with root box position, which might not aligned with host box.
+        # so, we have to subtract cx with the offset rbox - hbox
+        d = @box-offset!
+        [cx, cy] = [cx - d.dx, cy - d.dy]
 
         # rotating ctrl nodes ( .ldr-ctrl.r )
         if mouse.n.classList.contains \r =>
@@ -217,8 +231,12 @@
           # 我們期望被拖動的點移到 p2p
           p2p = [cx - box.x, cy - box.y]
 
-          # 若按住 shift, 則提供等比例縮放
-          if e.shiftKey =>
+          # 若按住 shift, 則提供等比例縮放.
+          # 或者, 若選了多個物件, 我們也強制等比例;
+          #   - 因為多個物件時若縮放加上原有物件的旋轉, 會造成 shear 效果
+          #   - 這個效果我們目前無法妥善的還原成 affine transformation 參數.
+          #   - 事實上在 illustrator 中, 他是將 transform 即時 expand 到 shape 中來處理的.
+          if e.shiftKey or @tgt.length > 1 =>
             # 取得 p2 於螢幕上的點減中心點的單位向量
             v = [Math.cos(a + Math.PI), Math.sin(a + Math.PI)]
             # 預計移至的位置其與中心點間的距離
@@ -273,32 +291,57 @@
   ldResize.prototype = Object.create(Object.prototype) <<< do
     on: (n, cb) -> @evt-handler.[][n].push cb
     fire: (n, ...v) -> for cb in (@evt-handler[n] or []) => cb.apply @, v
-    attach: (n) ->
+    attach: (n, addon = false) ->
       # store attached node n in tgt, and shorthand dim to d
-      [@tgt,d] = [n, @dim]
+      [d,n] = [@dim, if Array.isArray(n) => n else [n]]
+      if !addon => @tgt = n
+      else if !(n in @tgt) => @tgt ++= n
+      n0 = @tgt.0
       @n.g.style.display = \block
- 
-      # we need a clean bbox for n without transform. store it in @dim.box
-      n-alt = n.cloneNode true
-      n-alt.setAttribute \transform, ''
-      document.querySelector(\#svg).appendChild n-alt
-      b = n-alt.getBoundingClientRect!
-      n-alt.parentNode.removeChild n-alt
+
       rb = @host.getBoundingClientRect!
-      d.box = box = {x: b.x - rb.x, y: b.y - rb.y, w: b.width, h: b.height}
+      if @tgt.length > 1 =>
+        # target are multiple elements. we need to find outer box for them while consider their transform too.
+        b = {x1: null, x2: null, y1: null, y2: null}
+        @tgt.map ->
+          box = it.getBoundingClientRect!
+          if b.x1 == null or b.x1 > box.x => b.x1 = box.x
+          if b.x2 == null or b.x2 < box.x + box.width => b.x2 = box.x + box.width
+          if b.y1 == null or b.y1 > box.y => b.y1 = box.y
+          if b.y2 == null or b.y2 < box.y + box.height => b.y2 = box.y + box.height
+        d.box = box = {x: b.x1 - rb.x, y: b.y1 - rb.y, w: b.x2 - b.x1, h: b.y2 - b.y1}
+
+      else
+        # target is a single element. we should use its bounding box directly.
+        # we need a clean bbox for n without transform. store it in @dim.box
+        n-alt = n0.cloneNode true
+        n-alt.setAttribute \transform, ''
+        @host.appendChild n-alt
+        b = n-alt.getBoundingClientRect!
+        n-alt.parentNode.removeChild n-alt
+        d.box = box = {x: b.x - rb.x, y: b.y - rb.y, w: b.width, h: b.height}
+
       # central point of the bbox (cx, cy)
       [cx, cy] = [box.x + box.w / 2, box.y + box.h / 2]
 
-      # consolidate makes us a matrix(a,b,c,d,e,f).
-      # we then restore t,r,s from it.
-      # check draw function for detail explanation
-      t = n.getAttribute(\transform) or getComputedStyle(n).transform
-      m = (n.transform.baseVal.consolidate! or {})matrix or {a:1,b:0,c:0,d:1,e:0,f:0}
-      d.s <<< x: Math.sqrt(m.a ** 2 + m.b ** 2), y: Math.sqrt(m.c ** 2 + m.d ** 2)
-      d.r = Math.acos(m.a / d.s.x)
-      d.t <<< do
-        x: m.e + d.s.x * cx * Math.cos(d.r) - d.s.y * cy * Math.sin(d.r) - cx
-        y: m.f + d.s.x * cx * Math.sin(d.r) + d.s.y * cy * Math.cos(d.r) - cy
+      if @tgt.length > 1 =>
+        d.s <<< x: 1, y: 1
+        d.r = 0
+        d.t <<< x: 0, y: 0
+        @tgt.map -> if !it._ldr => it._ldr = {transform: it.getAttribute(\transform)}
+      else
+        # consolidate makes us a matrix(a,b,c,d,e,f).
+        # we then restore t,r,s from it.
+        # check draw function for detail explanation
+        t = n0.getAttribute(\transform) or getComputedStyle(n0).transform
+        m = (n0.transform.baseVal.consolidate! or {})matrix or {a:1,b:0,c:0,d:1,e:0,f:0}
+        d.s <<< x: Math.sqrt(m.a ** 2 + m.b ** 2), y: Math.sqrt(m.c ** 2 + m.d ** 2)
+        d.r = Math.acos(m.a / d.s.x)
+        # acos range from 0 ~ Math.PI. check for sign of m.b (sin(a)) for Math.PI ~ 2 * Math.PI
+        if m.b < 0 => d.r = Math.PI * 2 - d.r
+        d.t <<< do
+          x: m.e + d.s.x * cx * Math.cos(d.r) - d.s.y * cy * Math.sin(d.r) - cx
+          y: m.f + d.s.x * cx * Math.sin(d.r) + d.s.y * cy * Math.cos(d.r) - cy
 
       @dim <<< do
         x: box.x + (box.w / 2) * (1 - @dim.s.x) + @dim.t.x
@@ -306,7 +349,7 @@
         w: box.w * @dim.s.x
         h: box.h * @dim.s.y
 
-      # draw will take care of transform by calcing it from @dim. 
+      # draw will take care of transform by calcing it from @dim.
       @draw!
 
     set: (t = {}, delta = false) ->
@@ -325,9 +368,17 @@
       @fire \resize, @dim
 
     get: -> @dim
-    detach: -> 
-      @tgt = null
+    detach: ->
+      @tgt.map -> it._ldr = null
+      @tgt = []
       @n.g.style.display = \none
+
+    # if host and root box not aligned, we have to take care the offset.
+    box-offset: ->
+      if @host == @root => return {dx: 0, dy: 0}
+      hbox = @host.getBoundingClientRect!
+      rbox = @root.getBoundingClientRect!
+      {dx: rbox.x - hbox.x, dy: rbox.y - hbox.y}
 
 
   if module? => module.exports = ldResize

@@ -16,6 +16,7 @@ var slice$ = [].slice;
     import$(this, {
       opt: opt,
       evtHandler: {},
+      tgt: [],
       host: host = typeof host === 'string'
         ? document.querySelector(host)
         : opt.host,
@@ -42,6 +43,10 @@ var slice$ = [].slice;
         r: 0
       }
     });
+    this.host.classList.add('ldr-host');
+    if (this.host !== this.root) {
+      this.host.classList.add('ldr-host-standalone');
+    }
     this.n = {
       s: ns = [0, 1, 2, 3, 4, 5, 6, 7, 8].map(function(d, i){
         var x$, n;
@@ -78,13 +83,14 @@ var slice$ = [].slice;
     });
     host.appendChild(ng);
     this.draw = draw = function(){
-      var ref$, s, r, sw, sh, h, i$, y, j$, x, box, cx, cy, a, b, c, d, e, f;
+      var ref$, s, r, sw, sh, h, d, i$, y, j$, x, box, cx, cy, a, b, c, e, f;
       ref$ = [8, 2, dim.w / 2, dim.h / 2], s = ref$[0], r = ref$[1], sw = ref$[2], sh = ref$[3];
       h = s / 2;
       [['x', -dim.w / 2], ['y', -dim.h / 2], ['width', dim.w], ['height', dim.h]].map(function(it){
         return nb.setAttribute(it[0], it[1]);
       });
-      ng.setAttribute('transform', "translate(" + (dim.x + dim.w / 2) + ", " + (dim.y + dim.h / 2) + ") rotate(" + deg(dim.r || 0) + ")");
+      d = this$.boxOffset();
+      ng.setAttribute('transform', "translate(" + (d.dx + dim.x + dim.w / 2) + ", " + (d.dy + dim.y + dim.h / 2) + ") rotate(" + deg(dim.r || 0) + ")");
       for (i$ = 0; i$ <= 2; ++i$) {
         y = i$;
         for (j$ = 0; j$ <= 2; ++j$) {
@@ -114,18 +120,16 @@ var slice$ = [].slice;
       d = dim.s.y * Math.cos(dim.r);
       e = -dim.s.x * cx * Math.cos(dim.r) + dim.s.y * cy * Math.sin(dim.r) + cx + dim.t.x;
       f = -dim.s.x * cx * Math.sin(dim.r) - dim.s.y * cy * Math.cos(dim.r) + cy + dim.t.y;
-      return this$.tgt.setAttribute('transform', "matrix(" + a + " " + b + " " + c + " " + d + " " + e + " " + f + ")");
+      return this$.tgt.map(function(it){
+        var that;
+        return it.setAttribute('transform', "matrix(" + a + " " + b + " " + c + " " + d + " " + e + " " + f + ") " + ((that = it._ldr) ? that.transform || '' : ''));
+      });
       function fn$(it){
         return ns[y * 3 + x].setAttribute(it[0], it[1]);
       }
       function fn1$(it){
         return nr[y * 2 + x].setAttribute(it[0], it[1]);
       }
-    };
-    this.downSim = function(n, e){
-      document.addEventListener('mouseup', mouse.up);
-      document.addEventListener('mousemove', mouse.move);
-      return mouse.ix = e.clientX, mouse.iy = e.clientY, mouse.nx = 1, mouse.ny = 1, mouse.n = n, mouse;
     };
     mouse = {
       up: function(e){
@@ -146,8 +150,8 @@ var slice$ = [].slice;
         mouse.nx = 1;
         mouse.ny = 1;
         mouse.n = n;
-        if (!this$.tgt || this$.tgt !== n) {
-          return this$.attach(n);
+        if (!(this$.tgt.length && in$(n, this$.tgt))) {
+          return this$.attach(n, e.shiftKey);
         }
       },
       downHost: function(e){
@@ -175,7 +179,7 @@ var slice$ = [].slice;
         }
       },
       move: function(e){
-        var ref$, cx, cy, nx, ny, box, dx, dy, p2, v, len, a, p2p, na, p1, p1p, v2, len2, cp;
+        var ref$, cx, cy, nx, ny, box, dx, dy, d, p2, v, len, a, p2p, na, p1, p1p, v2, len2, cp;
         ref$ = [e.clientX, e.clientY, mouse.nx, mouse.ny], cx = ref$[0], cy = ref$[1], nx = ref$[2], ny = ref$[3];
         box = host.getBoundingClientRect();
         if (nx === 1 && ny === 1) {
@@ -190,6 +194,8 @@ var slice$ = [].slice;
           mouse.iy = cy;
           return draw();
         }
+        d = this$.boxOffset();
+        ref$ = [cx - d.dx, cy - d.dy], cx = ref$[0], cy = ref$[1];
         if (mouse.n.classList.contains('r')) {
           p2 = [dim.x + dim.w * nx / 2, dim.y + dim.h * ny / 2];
           v = [p2[0] - dim.x - dim.w / 2, p2[1] - dim.y - dim.h / 2];
@@ -224,7 +230,7 @@ var slice$ = [].slice;
           a += dim.r;
           p1p = [dim.x + dim.w / 2 + len * Math.cos(a), dim.y + dim.h / 2 + len * Math.sin(a)];
           p2p = [cx - box.x, cy - box.y];
-          if (e.shiftKey) {
+          if (e.shiftKey || this$.tgt.length > 1) {
             v = [Math.cos(a + Math.PI), Math.sin(a + Math.PI)];
             v2 = [p2p[0] - dim.x - dim.w / 2, p2p[1] - dim.y - dim.h / 2];
             len2 = Math.sqrt(Math.pow(v2[0], 2) + Math.pow(v2[1], 2));
@@ -284,40 +290,102 @@ var slice$ = [].slice;
       }
       return results$;
     },
-    attach: function(n){
-      var ref$, d, nAlt, b, rb, box, cx, cy, t, m;
-      ref$ = [n, this.dim], this.tgt = ref$[0], d = ref$[1];
+    attach: function(n, addon){
+      var ref$, d, n0, rb, b, box, nAlt, cx, cy, t, m;
+      addon == null && (addon = false);
+      ref$ = [
+        this.dim, Array.isArray(n)
+          ? n
+          : [n]
+      ], d = ref$[0], n = ref$[1];
+      if (!addon) {
+        this.tgt = n;
+      } else if (!in$(n, this.tgt)) {
+        this.tgt = this.tgt.concat(n);
+      }
+      n0 = this.tgt[0];
       this.n.g.style.display = 'block';
-      nAlt = n.cloneNode(true);
-      nAlt.setAttribute('transform', '');
-      document.querySelector('#svg').appendChild(nAlt);
-      b = nAlt.getBoundingClientRect();
-      nAlt.parentNode.removeChild(nAlt);
       rb = this.host.getBoundingClientRect();
-      d.box = box = {
-        x: b.x - rb.x,
-        y: b.y - rb.y,
-        w: b.width,
-        h: b.height
-      };
+      if (this.tgt.length > 1) {
+        b = {
+          x1: null,
+          x2: null,
+          y1: null,
+          y2: null
+        };
+        this.tgt.map(function(it){
+          var box;
+          box = it.getBoundingClientRect();
+          if (b.x1 === null || b.x1 > box.x) {
+            b.x1 = box.x;
+          }
+          if (b.x2 === null || b.x2 < box.x + box.width) {
+            b.x2 = box.x + box.width;
+          }
+          if (b.y1 === null || b.y1 > box.y) {
+            b.y1 = box.y;
+          }
+          if (b.y2 === null || b.y2 < box.y + box.height) {
+            return b.y2 = box.y + box.height;
+          }
+        });
+        d.box = box = {
+          x: b.x1 - rb.x,
+          y: b.y1 - rb.y,
+          w: b.x2 - b.x1,
+          h: b.y2 - b.y1
+        };
+      } else {
+        nAlt = n0.cloneNode(true);
+        nAlt.setAttribute('transform', '');
+        this.host.appendChild(nAlt);
+        b = nAlt.getBoundingClientRect();
+        nAlt.parentNode.removeChild(nAlt);
+        d.box = box = {
+          x: b.x - rb.x,
+          y: b.y - rb.y,
+          w: b.width,
+          h: b.height
+        };
+      }
       ref$ = [box.x + box.w / 2, box.y + box.h / 2], cx = ref$[0], cy = ref$[1];
-      t = n.getAttribute('transform') || getComputedStyle(n).transform;
-      m = (n.transform.baseVal.consolidate() || {}).matrix || {
-        a: 1,
-        b: 0,
-        c: 0,
-        d: 1,
-        e: 0,
-        f: 0
-      };
-      ref$ = d.s;
-      ref$.x = Math.sqrt(Math.pow(m.a, 2) + Math.pow(m.b, 2));
-      ref$.y = Math.sqrt(Math.pow(m.c, 2) + Math.pow(m.d, 2));
-      d.r = Math.acos(m.a / d.s.x);
-      import$(d.t, {
-        x: m.e + d.s.x * cx * Math.cos(d.r) - d.s.y * cy * Math.sin(d.r) - cx,
-        y: m.f + d.s.x * cx * Math.sin(d.r) + d.s.y * cy * Math.cos(d.r) - cy
-      });
+      if (this.tgt.length > 1) {
+        ref$ = d.s;
+        ref$.x = 1;
+        ref$.y = 1;
+        d.r = 0;
+        ref$ = d.t;
+        ref$.x = 0;
+        ref$.y = 0;
+        this.tgt.map(function(it){
+          if (!it._ldr) {
+            return it._ldr = {
+              transform: it.getAttribute('transform')
+            };
+          }
+        });
+      } else {
+        t = n0.getAttribute('transform') || getComputedStyle(n0).transform;
+        m = (n0.transform.baseVal.consolidate() || {}).matrix || {
+          a: 1,
+          b: 0,
+          c: 0,
+          d: 1,
+          e: 0,
+          f: 0
+        };
+        ref$ = d.s;
+        ref$.x = Math.sqrt(Math.pow(m.a, 2) + Math.pow(m.b, 2));
+        ref$.y = Math.sqrt(Math.pow(m.c, 2) + Math.pow(m.d, 2));
+        d.r = Math.acos(m.a / d.s.x);
+        if (m.b < 0) {
+          d.r = Math.PI * 2 - d.r;
+        }
+        import$(d.t, {
+          x: m.e + d.s.x * cx * Math.cos(d.r) - d.s.y * cy * Math.sin(d.r) - cx,
+          y: m.f + d.s.x * cx * Math.sin(d.r) + d.s.y * cy * Math.cos(d.r) - cy
+        });
+      }
       import$(this.dim, {
         x: box.x + (box.w / 2) * (1 - this.dim.s.x) + this.dim.t.x,
         y: box.y + (box.h / 2) * (1 - this.dim.s.y) + this.dim.t.y,
@@ -364,8 +432,26 @@ var slice$ = [].slice;
       return this.dim;
     },
     detach: function(){
-      this.tgt = null;
+      this.tgt.map(function(it){
+        return it._ldr = null;
+      });
+      this.tgt = [];
       return this.n.g.style.display = 'none';
+    },
+    boxOffset: function(){
+      var hbox, rbox;
+      if (this.host === this.root) {
+        return {
+          dx: 0,
+          dy: 0
+        };
+      }
+      hbox = this.host.getBoundingClientRect();
+      rbox = this.root.getBoundingClientRect();
+      return {
+        dx: rbox.x - hbox.x,
+        dy: rbox.y - hbox.y
+      };
     }
   });
   if (typeof module != 'undefined' && module !== null) {
@@ -379,4 +465,9 @@ function import$(obj, src){
   var own = {}.hasOwnProperty;
   for (var key in src) if (own.call(src, key)) obj[key] = src[key];
   return obj;
+}
+function in$(x, xs){
+  var i = -1, l = xs.length >>> 0;
+  while (++i < l) if (x === xs[i]) return true;
+  return false;
 }
