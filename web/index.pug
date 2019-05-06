@@ -3,11 +3,14 @@ html
   head
     link(rel="stylesheet",type="text/css",href="index.css")
     link(rel="stylesheet",type="text/css",href="ldr.css")
-    script(src="//cdn.loading.io/ldQuery/latest/ldq.min.js")
+    link(rel="stylesheet",type="text/css",href="main.css")
+    script(src="https://cdn.loading.io/ldQuery/latest/ldq.min.js")
   body
     svg#svg(style="width:800px;height:500px;background:#f1f2f3")
       include ps.svg
     div(style="height:2000px")
 
-    script(src="ldr.js")
+    //-script(src="ldr.js")
+    //-script(src="work.js")
+    script(src="main.js")
     script(src="index.js")

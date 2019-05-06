@@ -134,7 +134,7 @@ var slice$ = [].slice;
     };
     mouse = {
       up: function(e){
-        return [['mouseup', mouse.p], ['mousemove', mouse.move]].map(function(it){
+        return [['mouseup', mouse.up], ['mousemove', mouse.move]].map(function(it){
           return document.removeEventListener(it[0], it[1]);
         });
       },
