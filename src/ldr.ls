@@ -129,7 +129,7 @@
 
     # Mouse event handler
     mouse = do
-      up: (e) -> [[\mouseup, mouse.p], [\mousemove, mouse.move]].map -> document.removeEventListener it.0, it.1
+      up: (e) -> [[\mouseup, mouse.up], [\mousemove, mouse.move]].map -> document.removeEventListener it.0, it.1
       down: (e) ->
       down-root: (e) ~>
         if !( (n = e.target) and n.classList and !n.classList.contains(\ldr-ctrl) ) => return @detach!
