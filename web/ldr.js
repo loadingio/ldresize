@@ -8,7 +8,7 @@ var slice$ = [].slice;
     return 180 * v / Math.PI;
   };
   ldResize = function(opt){
-    var host, root, filter, dim, ns, nr, ng, nb, mouse, this$ = this;
+    var host, root, filter, mouseDown, dim, ns, nr, ng, nb, mouse, this$ = this;
     opt == null && (opt = {});
     host = !opt.host
       ? opt.root
@@ -24,6 +24,7 @@ var slice$ = [].slice;
         ? document.querySelector(opt.root)
         : opt.root : void 8,
       filter: filter = opt.filter || null,
+      mousedown: mouseDown = opt.mouseDown || null,
       dim: dim = {
         s: {
           x: 1,
@@ -100,7 +101,9 @@ var slice$ = [].slice;
         mouse.nx = 1;
         mouse.ny = 1;
         mouse.n = nr[1];
+        console.log(this$.mouseDown);
         if (this$.mouseDown) {
+          console.log('here');
           return this$.attach(this$.mouseDown(e));
         } else if (!(this$.tgt.length && in$(n, this$.tgt))) {
           return this$.attach(n, e.shiftKey);
@@ -320,7 +323,14 @@ var slice$ = [].slice;
           if (b.y2 === null || b.y2 < box.y + box.height) {
             b.y2 = box.y + box.height;
           }
-          mat = (it.transform.baseVal.consolidate() || {}).matrix;
+          mat = (it.transform.baseVal.consolidate() || {}).matrix || {
+            a: 1,
+            b: 0,
+            c: 0,
+            d: 1,
+            e: 0,
+            f: 0
+          };
           it._mi = (ref$ = this$.host.createSVGMatrix(), ref$.a = mat.a, ref$.b = mat.b, ref$.c = mat.c, ref$.d = mat.d, ref$.e = mat.e, ref$.f = mat.f, ref$);
           return it._mo = _(it.parentNode);
         });

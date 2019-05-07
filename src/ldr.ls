@@ -12,6 +12,7 @@
       host: host = if typeof(host) == \string => document.querySelector(host) else opt.host
       root: (root = if typeof(opt.root) == \string => document.querySelector(opt.root) else opt.root) if opt.root
       filter: filter = (opt.filter or null)
+      mousedown: mousedown = (opt.mousedown or null)
       dim: dim = {s: {x: 1, y: 1}, t: {x: 0, y: 0}, r: 0, x: 0, y: 0, w: 0, h: 0, mo: null}
     @host.classList.add \ldr-host
     if @host != @root => @host.classList.add \ldr-host-standalone
@@ -50,7 +51,7 @@
         mouse <<< ix: e.clientX, iy: e.clientY, nx: 1, ny: 1, n: nr[1]
         # if nothing selected, or the selected item is not current item -> re-attach.
         # otherwise, keep working on previous attached item
-        if @mouse-down => @attach @mouse-down(e)
+        if @mousedown => @attach @mousedown(e)
         else if !(@tgt.length and (n in @tgt)) => @attach n, e.shiftKey
 
 
@@ -232,7 +233,7 @@
           if b.x2 == null or b.x2 < box.x + box.width => b.x2 = box.x + box.width
           if b.y1 == null or b.y1 > box.y => b.y1 = box.y
           if b.y2 == null or b.y2 < box.y + box.height => b.y2 = box.y + box.height
-          mat = (it.transform.baseVal.consolidate! or {})matrix
+          mat = (it.transform.baseVal.consolidate! or {})matrix or {a: 1, b: 0, c: 0, d: 1, e: 0, f: 0}
           # create new matrix since firefox reuse consolidated matrix for new transform, which cause problem
           it._mi = @host.createSVGMatrix! <<< mat{a,b,c,d,e,f}
           it._mo = _(it.parentNode)
