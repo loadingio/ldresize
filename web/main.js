@@ -262,7 +262,7 @@ var slice$ = [].slice;
       };
     },
     attach: function(n, plus){
-      var ref$, hb, rb, at, _, b, box, cx, cy, mo, nAlt, mi, m, p, this$ = this;
+      var ref$, hb, rb, at, _, b, box, cx, cy, mo, nAlt, transform, mi, i$, to$, i, m, p, this$ = this;
       plus == null && (plus = false);
       n = Array.isArray(n)
         ? n
@@ -337,8 +337,9 @@ var slice$ = [].slice;
         ref$ = [box.x + box.w / 2, box.y + box.h / 2], cx = ref$[0], cy = ref$[1];
         this.dim.mo = mo = this.host.createSVGMatrix();
       } else {
+        this.dim.mo = this.tgt[0]._mo = mo = _(this.tgt[0].parentNode);
         nAlt = this.tgt[0].cloneNode(true);
-        nAlt.setAttribute('transform', '');
+        nAlt.transform.baseVal.initialize(this.host.createSVGTransformFromMatrix(mo));
         this.host.appendChild(nAlt);
         b = nAlt.getBoundingClientRect();
         nAlt.parentNode.removeChild(nAlt);
@@ -349,21 +350,67 @@ var slice$ = [].slice;
           h: b.height
         };
         ref$ = [box.x + box.w / 2, box.y + box.h / 2], cx = ref$[0], cy = ref$[1];
-        mi = m = (this.tgt[0].transform.baseVal.consolidate() || {}).matrix || this.host.createSVGMatrix();
-        this.tgt[0]._mo = _(this.tgt[0].parentNode);
-        m = this.tgt[0]._mo.multiply(m);
-        this.dim.mo = mo = this.host.createSVGMatrix();
+        transform = this.tgt[0].transform.baseVal;
+        mi = this.host.createSVGMatrix();
+        for (i$ = 0, to$ = transform.numberOfItems; i$ < to$; ++i$) {
+          i = i$;
+          mi = mi.multiply(transform.getItem(i).matrix);
+        }
+        m = this.tgt[0]._mo.multiply(mi.multiply(this.tgt[0]._mo.inverse()));
         ref$ = at.s;
         ref$.x = Math.sqrt(Math.pow(m.a, 2) + Math.pow(m.b, 2));
         ref$.y = Math.sqrt(Math.pow(m.c, 2) + Math.pow(m.d, 2));
         at.r = Math.acos(m.a / at.s.x);
-        if (m.c !== at.s.y * -Math.sin(at.r) || m.d !== at.s.y * Math.cos(at.r)) {
-          m = this.tgt[0]._mo;
+        if (Math.pow(m.c - at.s.y * -Math.sin(at.r), 2) + Math.pow(m.d - at.s.y * Math.cos(at.r), 2) > 1e-6) {
+          console.log("skewed.");
+          m = this.tgt[0]._mo.multiply(transform.getItem(0).matrix.multiply(this.tgt[0]._mo.inverse()));
           ref$ = at.s;
-          ref$.x = 1;
-          ref$.y = 1;
-          at.r = 0;
-          mi = mi;
+          ref$.x = Math.sqrt(Math.pow(m.a, 2) + Math.pow(m.b, 2));
+          ref$.y = Math.sqrt(Math.pow(m.c, 2) + Math.pow(m.d, 2));
+          at.r = Math.acos(m.a / at.s.x);
+          if (Math.pow(m.c - at.s.y * -Math.sin(at.r), 2) + Math.pow(m.d - at.s.y * Math.cos(at.r), 2) > 1e-6) {
+            console.log("skewed. 2");
+            b = this.tgt[0].getBoundingClientRect();
+            this.dim.box = box = {
+              x: b.x - hb.x,
+              y: b.y - hb.y,
+              w: b.width,
+              h: b.height
+            };
+            ref$ = [box.x + box.w / 2, box.y + box.h / 2], cx = ref$[0], cy = ref$[1];
+            ref$ = at.s;
+            ref$.x = 1;
+            ref$.y = 1;
+            at.r = 0;
+            ref$ = at.t;
+            ref$.x = 0;
+            ref$.y = 0;
+          } else {
+            mi = this.host.createSVGMatrix();
+            for (i$ = 1, to$ = transform.numberOfItems; i$ < to$; ++i$) {
+              i = i$;
+              mi = mi.multiply(transform.getItem(i).matrix);
+            }
+            nAlt = this.tgt[0].cloneNode(true);
+            nAlt.transform.baseVal.initialize(this.host.createSVGTransformFromMatrix(mo.multiply(mi)));
+            this.host.appendChild(nAlt);
+            b = nAlt.getBoundingClientRect();
+            nAlt.parentNode.removeChild(nAlt);
+            this.dim.box = box = {
+              x: b.x - hb.x,
+              y: b.y - hb.y,
+              w: b.width,
+              h: b.height
+            };
+            ref$ = [box.x + box.w / 2, box.y + box.h / 2], cx = ref$[0], cy = ref$[1];
+            if (m.b < 0) {
+              at.r = Math.PI * 2 - at.r;
+            }
+            import$(at.t, {
+              x: m.e + at.s.x * cx * Math.cos(at.r) - at.s.y * cy * Math.sin(at.r) - cx,
+              y: m.f + at.s.x * cx * Math.sin(at.r) + at.s.y * cy * Math.cos(at.r) - cy
+            });
+          }
         } else {
           if (m.b < 0) {
             at.r = Math.PI * 2 - at.r;
@@ -430,7 +477,7 @@ var slice$ = [].slice;
       });
       p.x = z.x + z.w * 0.5;
       p.y = z.y + z.h * 0.5;
-      pc = p.matrixTransform(z.mo.multiply(mc));
+      pc = p.matrixTransform(mc);
       pv = [
         {
           x: pt[1].x - pt[0].x,
@@ -492,7 +539,7 @@ var slice$ = [].slice;
         if (this$.tgt.length > 1) {
           m = mo.inverse().multiply(mat.multiply(mo));
         } else {
-          m = mo.inverse().multiply(mat);
+          m = mo.inverse().multiply(mat.multiply(mo));
         }
         a = m.a, b = m.b, c = m.c, d = m.d, e = m.e, f = m.f;
         return it.setAttribute('transform', ("matrix(" + a + " " + b + " " + c + " " + d + " " + e + " " + f + ")") + ((that = it._mi) ? " matrix(" + that.a + " " + that.b + " " + that.c + " " + that.d + " " + that.e + " " + that.f + ")" : ""));

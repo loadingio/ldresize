@@ -5,8 +5,8 @@ ldr = new ldResize({
   root: svg
 });
 path = ld$.find(document, 'path');
-ldr.attach([path[6], path[0]]);
-ldr.attach([path[2]], true);
-setInterval(function(){
-  return ldr.attach([path[2]]);
-}, 5000);
+/*
+setInterval (->
+  ldr.attach [path.2]
+), 5000
+*/

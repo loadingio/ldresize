@@ -258,35 +258,62 @@
         # transform for this box is always identity at the beginning, so we don't change "at"
       else
         # single target. use its bounding box (before transforming) directly.
+        @dim.mo = @tgt.0._mo = mo = _ @tgt.0.parentNode
         n-alt = @tgt.0.cloneNode true
-        n-alt.setAttribute \transform, ''
+        n-alt.transform.baseVal.initialize @host.createSVGTransformFromMatrix mo
         @host.appendChild n-alt
         b = n-alt.getBoundingClientRect!
         n-alt.parentNode.removeChild n-alt
         @dim.box = box = {x: b.x - hb.x, y: b.y - hb.y, w: b.width, h: b.height}
         [cx, cy] = [box.x + box.w / 2, box.y + box.h / 2]
+        transform = @tgt.0.transform.baseVal
+        mi = @host.createSVGMatrix!
+        for i from 0 til transform.numberOfItems =>
+          mi = mi.multiply(transform.getItem(i).matrix)
 
-        # ATC: calculate current transform and check if it's valid TRS model
-        mi = m = (@tgt.0.transform.baseVal.consolidate! or {})matrix or @host.createSVGMatrix!
-        @tgt.0._mo = _ @tgt.0.parentNode
-        m = @tgt.0._mo.multiply(m)
-        @dim.mo = mo = @host.createSVGMatrix!
-
+        #mi = (@tgt.0.transform.baseVal.consolidate! or {})matrix or @host.createSVGMatrix!
+        m = @tgt.0._mo.multiply(mi.multiply(@tgt.0._mo.inverse!))
         at.s <<< x: Math.sqrt(m.a ** 2 + m.b ** 2), y: Math.sqrt(m.c ** 2 + m.d ** 2)
         at.r = Math.acos(m.a / at.s.x)
 
         # if skew is involved, we should reset at to identity, and expand current transform into node.
-        if m.c != at.s.y * -Math.sin(at.r) or m.d != at.s.y * Math.cos(at.r) =>
-          m = @tgt.0._mo
-          at.s <<< x: 1, y: 1
-          at.r = 0
-          mi = mi 
+        if ((m.c - at.s.y * -Math.sin(at.r)) ** 2 + (m.d - at.s.y * Math.cos(at.r)) ** 2) > 1e-6 =>
+          console.log "skewed."
+          m = @tgt.0._mo.multiply(transform.getItem(0).matrix.multiply(@tgt.0._mo.inverse!))
+          at.s <<< x: Math.sqrt(m.a ** 2 + m.b ** 2), y: Math.sqrt(m.c ** 2 + m.d ** 2)
+          at.r = Math.acos(m.a / at.s.x)
+          if ((m.c - at.s.y * -Math.sin(at.r)) ** 2 + (m.d - at.s.y * Math.cos(at.r)) ** 2) > 1e-6 =>
+            console.log "skewed. 2"
+            b = @tgt.0.getBoundingClientRect!
+            @dim.box = box = {x: b.x - hb.x, y: b.y - hb.y, w: b.width, h: b.height}
+            [cx, cy] = [box.x + box.w / 2, box.y + box.h / 2]
+            at.s <<< x: 1, y: 1
+            at.r = 0
+            at.t <<< x: 0, y: 0
+          else
+            mi = @host.createSVGMatrix!
+            for i from 1 til transform.numberOfItems =>
+              mi = mi.multiply(transform.getItem(i).matrix)
+            n-alt = @tgt.0.cloneNode true
+            n-alt.transform.baseVal.initialize @host.createSVGTransformFromMatrix mo.multiply(mi)
+            @host.appendChild n-alt
+            b = n-alt.getBoundingClientRect!
+            n-alt.parentNode.removeChild n-alt
+            @dim.box = box = {x: b.x - hb.x, y: b.y - hb.y, w: b.width, h: b.height}
+            [cx, cy] = [box.x + box.w / 2, box.y + box.h / 2]
+            if m.b < 0 => at.r = Math.PI * 2 - at.r
+            at.t <<< do
+              x: m.e + at.s.x * cx * Math.cos(at.r) - at.s.y * cy * Math.sin(at.r) - cx
+              y: m.f + at.s.x * cx * Math.sin(at.r) + at.s.y * cy * Math.cos(at.r) - cy
+
+
         else
           # acos range from 0 ~ Math.PI. check for sign of m.b (sin(a)) for Math.PI ~ 2 * Math.PI
           if m.b < 0 => at.r = Math.PI * 2 - at.r
           at.t <<< do
             x: m.e + at.s.x * cx * Math.cos(at.r) - at.s.y * cy * Math.sin(at.r) - cx
             y: m.f + at.s.x * cx * Math.sin(at.r) + at.s.y * cy * Math.cos(at.r) - cy
+          # MI is converted to at and replaced by mc. so it should be identity from now.
           mi = @host.createSVGMatrix!
         @tgt.0._mi = mi
       @dim <<< at # affine transform ( mc )
@@ -324,8 +351,10 @@
         {x: z.x + z.w, y: z.y + z.h}
         {x: z.x, y: z.y + z.h}
       ].map -> (p <<< it).matrixTransform(mc) #(z.mo.multiply(mc))
+      #].map -> (p <<< it).matrixTransform(mc.multiply(z.mo)) #(z.mo.multiply(mc))
       p <<< x: z.x + z.w * 0.5, y: z.y + z.h * 0.5
-      pc = p.matrixTransform(z.mo.multiply(mc))
+      pc = p.matrixTransform(mc)# .multiply(z.mo))
+      #pc = p.matrixTransform(mc.multiply(z.mo))
       pv = [
         {x: pt.1.x - pt.0.x, y: pt.1.y - pt.0.y}
         {x: pt.3.x - pt.0.x, y: pt.3.y - pt.0.y}
@@ -383,7 +412,8 @@
         # multi-tgt -> mat is global outside mo. to apply within mo, inverse-mo x mat x mo
         if @tgt.length > 1 => m = mo.inverse!multiply(mat.multiply(mo))
         # single-tgt -> mat is mo x mc. to apply mc, simply inverse-mo x mat.
-        else => m = mo.inverse!multiply(mat)
+        #else => m = mo.inverse!multiply(mat)
+        else => m = mo.inverse!multiply(mat.multiply(mo))
         {a,b,c,d,e,f} = m
         it.setAttribute \transform, (
           "matrix(#a #b #c #d #e #f)" +
