@@ -8,7 +8,7 @@ var slice$ = [].slice;
     return 180 * v / Math.PI;
   };
   ldResize = function(opt){
-    var host, root, dim, ns, nr, ng, nb, mouse, this$ = this;
+    var host, root, filter, dim, ns, nr, ng, nb, mouse, this$ = this;
     opt == null && (opt = {});
     host = !opt.host
       ? opt.root
@@ -23,6 +23,7 @@ var slice$ = [].slice;
       root: opt.root ? root = typeof opt.root === 'string'
         ? document.querySelector(opt.root)
         : opt.root : void 8,
+      filter: filter = opt.filter || null,
       dim: dim = {
         s: {
           x: 1,
@@ -84,7 +85,27 @@ var slice$ = [].slice;
         document.removeEventListener('mouseup', mouse.up);
         return document.removeEventListener('mousemove', mouse.move);
       },
-      downRoot: function(e){},
+      downRoot: function(e){
+        var n;
+        if (!((n = e.target) && n.classList && !n.classList.contains('ldr-ctrl'))) {
+          return this$.detach();
+        }
+        if (n === root || (filter && !filter(n))) {
+          return this$.detach();
+        }
+        document.addEventListener('mouseup', mouse.up);
+        document.addEventListener('mousemove', mouse.move);
+        mouse.ix = e.clientX;
+        mouse.iy = e.clientY;
+        mouse.nx = 1;
+        mouse.ny = 1;
+        mouse.n = nr[1];
+        if (this$.mouseDown) {
+          return this$.attach(this$.mouseDown(e));
+        } else if (!(this$.tgt.length && in$(n, this$.tgt))) {
+          return this$.attach(n, e.shiftKey);
+        }
+      },
       downHost: function(e){
         var n, ref$, nx, ny;
         if (!((n = e.target) && e.target.classList)) {
@@ -103,6 +124,10 @@ var slice$ = [].slice;
             ny: ny,
             n: n
           });
+        } else if (root === host) {
+          mouse.downRoot(e);
+        } else {
+          this$.detach();
         }
         return e.stopPropagation();
       },
@@ -157,7 +182,7 @@ var slice$ = [].slice;
           }
           p1p = p1;
           p2p = [cx - box.x, cy - box.y];
-          if (e.shiftKey || this$.tgt.length > 1) {
+          if (e.shiftKey) {
             v = [Math.cos(a + Math.PI), Math.sin(a + Math.PI)];
             v2 = [p2p[0] - pc.x, p2p[1] - pc.y];
             len2 = Math.sqrt(Math.pow(v2[0], 2) + Math.pow(v2[1], 2));
@@ -250,8 +275,9 @@ var slice$ = [].slice;
         }));
       }
       if (!this.tgt.length) {
-        this.detach();
+        return this.detach();
       }
+      this.n.g.style.display = 'block';
       ref$ = [this.host, this.root].map(function(it){
         return it.getBoundingClientRect();
       }), hb = ref$[0], rb = ref$[1];
@@ -324,20 +350,31 @@ var slice$ = [].slice;
         };
         ref$ = [box.x + box.w / 2, box.y + box.h / 2], cx = ref$[0], cy = ref$[1];
         mi = m = (this.tgt[0].transform.baseVal.consolidate() || {}).matrix || this.host.createSVGMatrix();
+        this.tgt[0]._mo = _(this.tgt[0].parentNode);
+        m = this.tgt[0]._mo.multiply(m);
+        this.dim.mo = mo = this.host.createSVGMatrix();
         ref$ = at.s;
         ref$.x = Math.sqrt(Math.pow(m.a, 2) + Math.pow(m.b, 2));
         ref$.y = Math.sqrt(Math.pow(m.c, 2) + Math.pow(m.d, 2));
         at.r = Math.acos(m.a / at.s.x);
-        if (m.b < 0) {
-          at.r = Math.PI * 2 - at.r;
+        if (m.c !== at.s.y * -Math.sin(at.r) || m.d !== at.s.y * Math.cos(at.r)) {
+          m = this.tgt[0]._mo;
+          ref$ = at.s;
+          ref$.x = 1;
+          ref$.y = 1;
+          at.r = 0;
+          mi = mi;
+        } else {
+          if (m.b < 0) {
+            at.r = Math.PI * 2 - at.r;
+          }
+          import$(at.t, {
+            x: m.e + at.s.x * cx * Math.cos(at.r) - at.s.y * cy * Math.sin(at.r) - cx,
+            y: m.f + at.s.x * cx * Math.sin(at.r) + at.s.y * cy * Math.cos(at.r) - cy
+          });
+          mi = this.host.createSVGMatrix();
         }
-        import$(at.t, {
-          x: m.e + at.s.x * cx * Math.cos(at.r) - at.s.y * cy * Math.sin(at.r) - cx,
-          y: m.f + at.s.x * cx * Math.sin(at.r) + at.s.y * cy * Math.cos(at.r) - cy
-        });
-        mi = this.host.createSVGMatrix();
         this.tgt[0]._mi = mi;
-        this.dim.mo = this.tgt[0]._mo = _(this.tgt[0].parentNode);
       }
       import$(this.dim, at);
       import$(this.dim, box);
@@ -349,7 +386,13 @@ var slice$ = [].slice;
       ref$.y = p.y;
       return this.render();
     },
-    detach: function(){},
+    detach: function(){
+      this.tgt.map(function(it){
+        return it._mi = null, it._mo = null, it;
+      });
+      this.tgt = [];
+      return this.n.g.style.display = 'none';
+    },
     pts: function(){
       var z, ref$, cx, cy, a, b, c, d, e, f, mc, p, pt, pc, pv;
       z = this.dim;
@@ -383,7 +426,7 @@ var slice$ = [].slice;
           y: z.y + z.h
         }
       ].map(function(it){
-        return import$(p, it).matrixTransform(z.mo.multiply(mc));
+        return import$(p, it).matrixTransform(mc);
       });
       p.x = z.x + z.w * 0.5;
       p.y = z.y + z.h * 0.5;
@@ -397,6 +440,8 @@ var slice$ = [].slice;
           y: pt[3].y - pt[0].y
         }
       ];
+      pv[0].len = Math.sqrt(Math.pow(pv[0].x, 2) + Math.pow(pv[0].y, 2));
+      pv[1].len = Math.sqrt(Math.pow(pv[1].x, 2) + Math.pow(pv[1].y, 2));
       return {
         a: a,
         b: b,
@@ -410,10 +455,9 @@ var slice$ = [].slice;
       };
     },
     render: function(){
-      var z, ref$, ng, nb, ns, nr, a, b, c, d, e, f, pt, pc, pv, s, h, r, i$, y, j$, x, mat, this$ = this;
+      var z, ref$, ng, nb, ns, nr, a, b, c, d, e, f, pt, pc, pv, s, h, r, i$, y, j$, x, px, py, vx, vy, len, mat, this$ = this;
       z = this.dim;
       ref$ = [this.n.g, this.n.b, this.n.s, this.n.r], ng = ref$[0], nb = ref$[1], ns = ref$[2], nr = ref$[3];
-      ng.style.display = 'block';
       ref$ = this.pts(), a = ref$.a, b = ref$.b, c = ref$.c, d = ref$.d, e = ref$.e, f = ref$.f, pt = ref$.pt, pc = ref$.pc, pv = ref$.pv;
       nb.setAttribute('d', "M" + pt[0].x + " " + pt[0].y + "\nL" + pt[1].x + " " + pt[1].y + "\nL" + pt[2].x + " " + pt[2].y + "\nL" + pt[3].x + " " + pt[3].y + "\nZ");
       ref$ = [8, 4, 2], s = ref$[0], h = ref$[1], r = ref$[2];
@@ -431,14 +475,25 @@ var slice$ = [].slice;
         y = i$;
         for (j$ = 0; j$ <= 1; ++j$) {
           x = j$;
-          [['x', x * pv[0].x + y * pv[1].x + pt[0].x - s * r + s * r * x], ['y', x * pv[0].y + y * pv[1].y + pt[0].y - s * r + s * r * y], ['width', s * r], ['height', s * r]].map(fn1$);
+          px = x * pv[0].x + y * pv[1].x + pt[0].x;
+          py = x * pv[0].y + y * pv[1].y + pt[0].y;
+          vx = px - pc.x;
+          vy = py - pc.y;
+          len = Math.sqrt(Math.pow(vx, 2) + Math.pow(vy, 2));
+          px = px + vx * s / len - h * r;
+          py = py + vy * s / len - h * r;
+          [['x', px], ['y', py], ['width', s * r], ['height', s * r]].map(fn1$);
         }
       }
       mat = (ref$ = this.host.createSVGMatrix(), ref$.a = a, ref$.b = b, ref$.c = c, ref$.d = d, ref$.e = e, ref$.f = f, ref$);
       return this.tgt.map(function(it){
         var mo, m, a, b, c, d, e, f, that;
         mo = it._mo;
-        m = mo.inverse().multiply(mat.multiply(mo));
+        if (this$.tgt.length > 1) {
+          m = mo.inverse().multiply(mat.multiply(mo));
+        } else {
+          m = mo.inverse().multiply(mat);
+        }
         a = m.a, b = m.b, c = m.c, d = m.d, e = m.e, f = m.f;
         return it.setAttribute('transform', ("matrix(" + a + " " + b + " " + c + " " + d + " " + e + " " + f + ")") + ((that = it._mi) ? " matrix(" + that.a + " " + that.b + " " + that.c + " " + that.d + " " + that.e + " " + that.f + ")" : ""));
       });

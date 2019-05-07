@@ -11,6 +11,7 @@
       # host: where the resize widgets host in.
       host: host = if typeof(host) == \string => document.querySelector(host) else opt.host
       root: (root = if typeof(opt.root) == \string => document.querySelector(opt.root) else opt.root) if opt.root
+      filter: filter = (opt.filter or null)
       dim: dim = {s: {x: 1, y: 1}, t: {x: 0, y: 0}, r: 0, x: 0, y: 0, w: 0, h: 0, mo: null}
     @host.classList.add \ldr-host
     if @host != @root => @host.classList.add \ldr-host-standalone
@@ -41,8 +42,19 @@
       up: (e) -> 
         document.removeEventListener \mouseup, mouse.up
         document.removeEventListener \mousemove, mouse.move
-      down-root: (e) ->
-      down-host: (e) ->
+      down-root: (e) ~>
+        if !( (n = e.target) and n.classList and !n.classList.contains(\ldr-ctrl) ) => return @detach!
+        if n == root or (filter and !filter(n)) => return @detach!
+        document.addEventListener \mouseup, mouse.up
+        document.addEventListener \mousemove, mouse.move
+        mouse <<< ix: e.clientX, iy: e.clientY, nx: 1, ny: 1, n: nr[1]
+        # if nothing selected, or the selected item is not current item -> re-attach.
+        # otherwise, keep working on previous attached item
+        if @mouse-down => @attach @mouse-down(e)
+        else if !(@tgt.length and (n in @tgt)) => @attach n, e.shiftKey
+
+
+      down-host: (e) ~>
         if !((n = e.target) and e.target.classList) => return
         if n.classList.contains(\ldr-ctrl) =>
           document.addEventListener \mouseup, mouse.up
@@ -58,6 +70,8 @@
             nx: nx, ny: ny
             # ctrl node
             n: n
+        else if root == host => mouse.down-root(e) # same container so we can share a common handler
+        else @detach!
         # host event handled, prevent propagating to possible parent that handle event again.
         e.stopPropagation! 
 
@@ -82,7 +96,6 @@
         [cx, cy] = [cx - d.dx, cy - d.dy]
 
         {pt,pc,pv,mc} = @pts!
-        #console.log p
         # rotating ctrl nodes ( .ldr-ctrl.r )
         if mouse.n.classList.contains \r =>
           # 點擊的點
@@ -147,7 +160,7 @@
           #   - 因為多個物件時若縮放加上原有物件的旋轉, 會造成 shear 效果
           #   - 這個效果我們目前無法妥善的還原成 affine transformation 參數.
           #   - 事實上在 illustrator 中, 他是將 transform 即時 expand 到 shape 中來處理的.
-          if e.shiftKey or @tgt.length > 1 =>
+          if e.shiftKey =>
             # 取得 p2 於螢幕上的點減中心點的單位向量
             v = [Math.cos(a + Math.PI), Math.sin(a + Math.PI)]
             # 預計移至的位置其與中心點間的距離
@@ -216,7 +229,8 @@
       n = if Array.isArray(n) => n else [n]
       if !plus => @tgt = n
       else @tgt ++= n.filter ~> !(it in @tgt)
-      if !@tgt.length => @detach!
+      if !@tgt.length => return @detach!
+      @n.g.style.display = \block
       [hb,rb] = [@host, @root].map -> it.getBoundingClientRect!
       # now we extract expect affine transform from the target(s).
       at = s: {x: 1, y: 1}, r: 0, t: x: 0, y: 0
@@ -254,24 +268,29 @@
 
         # ATC: calculate current transform and check if it's valid TRS model
         mi = m = (@tgt.0.transform.baseVal.consolidate! or {})matrix or @host.createSVGMatrix!
+        @tgt.0._mo = _ @tgt.0.parentNode
+        m = @tgt.0._mo.multiply(m)
+        @dim.mo = mo = @host.createSVGMatrix!
+
         at.s <<< x: Math.sqrt(m.a ** 2 + m.b ** 2), y: Math.sqrt(m.c ** 2 + m.d ** 2)
         at.r = Math.acos(m.a / at.s.x)
-        # TODO  if skew is involved, we should reset at to identity, and expand current transform into node.
-        # acos range from 0 ~ Math.PI. check for sign of m.b (sin(a)) for Math.PI ~ 2 * Math.PI
-        if m.b < 0 => at.r = Math.PI * 2 - at.r
-        at.t <<< do
-          x: m.e + at.s.x * cx * Math.cos(at.r) - at.s.y * cy * Math.sin(at.r) - cx
-          y: m.f + at.s.x * cx * Math.sin(at.r) + at.s.y * cy * Math.cos(at.r) - cy
-        mi = @host.createSVGMatrix!
+
+        # if skew is involved, we should reset at to identity, and expand current transform into node.
+        if m.c != at.s.y * -Math.sin(at.r) or m.d != at.s.y * Math.cos(at.r) =>
+          m = @tgt.0._mo
+          at.s <<< x: 1, y: 1
+          at.r = 0
+          mi = mi 
+        else
+          # acos range from 0 ~ Math.PI. check for sign of m.b (sin(a)) for Math.PI ~ 2 * Math.PI
+          if m.b < 0 => at.r = Math.PI * 2 - at.r
+          at.t <<< do
+            x: m.e + at.s.x * cx * Math.cos(at.r) - at.s.y * cy * Math.sin(at.r) - cx
+            y: m.f + at.s.x * cx * Math.sin(at.r) + at.s.y * cy * Math.cos(at.r) - cy
+          mi = @host.createSVGMatrix!
         @tgt.0._mi = mi
-        # ATO: calculate outer transform: transformation from parents
-        @dim.mo = @tgt.0._mo = _ @tgt.0.parentNode
-        # mo > mc > mi
-        # if mi contains only Translate/Rotate/Scale, then it will be set to identity
-        #   and mc set to mi.
       @dim <<< at # affine transform ( mc )
       @dim <<< box # bounding box without any transformation ( either mo or mi )
-      #@dim <<< {mo} # outer transform matrix, inner transform matrix
 
       p = @host.createSVGPoint!
       p.x = @dim.x
@@ -281,9 +300,9 @@
       @render!
 
     detach: ->
-      #@tgt.map -> it._ldr = null
-      #@tgt = []
-      #@n.g.style.display = \none
+      @tgt.map -> it <<< {_mi: null, _mo: null}
+      @tgt = []
+      @n.g.style.display = \none
     
     # 根據目前的 tsr, 算出對應的 matrix a ~ f;
     # 另外，依據目前的長寬與原點, 算出 ctrl node 的位置, 中心點與兩側的向量.
@@ -304,19 +323,20 @@
         {x: z.x + z.w, y: z.y}
         {x: z.x + z.w, y: z.y + z.h}
         {x: z.x, y: z.y + z.h}
-      ].map -> (p <<< it).matrixTransform(z.mo.multiply(mc))
+      ].map -> (p <<< it).matrixTransform(mc) #(z.mo.multiply(mc))
       p <<< x: z.x + z.w * 0.5, y: z.y + z.h * 0.5
       pc = p.matrixTransform(z.mo.multiply(mc))
       pv = [
         {x: pt.1.x - pt.0.x, y: pt.1.y - pt.0.y}
         {x: pt.3.x - pt.0.x, y: pt.3.y - pt.0.y}
       ]
+      pv.0.len = Math.sqrt(pv.0.x ** 2 + pv.0.y ** 2)
+      pv.1.len = Math.sqrt(pv.1.x ** 2 + pv.1.y ** 2)
       return {a,b,c,d,e,f,pt,pc,pv}
 
     render: ->
       z = @dim
       [ng,nb,ns,nr] = [@n.g, @n.b, @n.s, @n.r]
-      ng.style.display = \block
 
       {a,b,c,d,e,f,pt,pc,pv} = @pts!
 
@@ -341,9 +361,16 @@
 
       for y from 0 to 1 =>
         for x from 0 to 1 =>
+          px = x * pv.0.x + y * pv.1.x + pt.0.x
+          py = x * pv.0.y + y * pv.1.y + pt.0.y
+          vx = (px - pc.x)
+          vy = (py - pc.y)
+          len = Math.sqrt(vx ** 2 + vy ** 2)
+          px = px + vx * s  / len - h * r
+          py = py + vy * s  / len - h * r
           [
-            [\x, x * pv.0.x + y * pv.1.x + pt.0.x - s * r + s * r * x]
-            [\y, x * pv.0.y + y * pv.1.y + pt.0.y - s * r + s * r * y]
+            [\x, px]
+            [\y, py]
             [\width, s * r]
             [\height, s * r]
           ].map -> nr[y * 2 + x].setAttribute it.0, it.1
@@ -353,7 +380,10 @@
 
       @tgt.map ~>
         mo = it._mo
-        m = mo.inverse!multiply(mat.multiply(mo))
+        # multi-tgt -> mat is global outside mo. to apply within mo, inverse-mo x mat x mo
+        if @tgt.length > 1 => m = mo.inverse!multiply(mat.multiply(mo))
+        # single-tgt -> mat is mo x mc. to apply mc, simply inverse-mo x mat.
+        else => m = mo.inverse!multiply(mat)
         {a,b,c,d,e,f} = m
         it.setAttribute \transform, (
           "matrix(#a #b #c #d #e #f)" +
