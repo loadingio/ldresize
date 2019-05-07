@@ -232,7 +232,9 @@
           if b.x2 == null or b.x2 < box.x + box.width => b.x2 = box.x + box.width
           if b.y1 == null or b.y1 > box.y => b.y1 = box.y
           if b.y2 == null or b.y2 < box.y + box.height => b.y2 = box.y + box.height
-          it._mi = (it.transform.baseVal.consolidate! or {})matrix or @host.createSVGMatrix!
+          mat = (it.transform.baseVal.consolidate! or {})matrix
+          # create new matrix since firefox reuse consolidated matrix for new transform, which cause problem
+          it._mi = @host.createSVGMatrix! <<< mat{a,b,c,d,e,f}
           it._mo = _(it.parentNode)
         @dim.box = box = {x: b.x1 - rb.x, y: b.y1 - rb.y, w: b.x2 - b.x1, h: b.y2 - b.y1}
         [cx, cy] = [box.x + box.w / 2, box.y + box.h / 2]
@@ -251,7 +253,6 @@
         transform = @tgt.0.transform.baseVal
         # we don't use consolidate here because we might need standalone transform below.
         mi = @host.createSVGMatrix!
-        console.log transform.numberOfItems
         for i from 0 til transform.numberOfItems => mi = mi.multiply(transform.getItem(i).matrix)
         m = @tgt.0._mo.multiply(mi.multiply(@tgt.0._mo.inverse!))
         at.s <<< x: Math.sqrt(m.a ** 2 + m.b ** 2), y: Math.sqrt(m.c ** 2 + m.d ** 2)
@@ -375,7 +376,7 @@
 
       mat = @host.createSVGMatrix! <<< {a,b,c,d,e,f}
 
-      @tgt.map ~>
+      @tgt.map (it,i)~>
         {a,b,c,d,e,f} = it._mo.inverse!multiply(mat.multiply(it._mo))
         it.setAttribute \transform, (
           # affine transformation

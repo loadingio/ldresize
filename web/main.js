@@ -308,7 +308,7 @@ var slice$ = [].slice;
           y2: null
         };
         this.tgt.map(function(it){
-          var box;
+          var box, mat, ref$;
           box = it.getBoundingClientRect();
           if (b.x1 === null || b.x1 > box.x) {
             b.x1 = box.x;
@@ -322,7 +322,8 @@ var slice$ = [].slice;
           if (b.y2 === null || b.y2 < box.y + box.height) {
             b.y2 = box.y + box.height;
           }
-          it._mi = (it.transform.baseVal.consolidate() || {}).matrix || this$.host.createSVGMatrix();
+          mat = (it.transform.baseVal.consolidate() || {}).matrix;
+          it._mi = (ref$ = this$.host.createSVGMatrix(), ref$.a = mat.a, ref$.b = mat.b, ref$.c = mat.c, ref$.d = mat.d, ref$.e = mat.e, ref$.f = mat.f, ref$);
           return it._mo = _(it.parentNode);
         });
         this.dim.box = box = {
@@ -348,7 +349,6 @@ var slice$ = [].slice;
         ref$ = [box.x + box.w / 2, box.y + box.h / 2], cx = ref$[0], cy = ref$[1];
         transform = this.tgt[0].transform.baseVal;
         mi = this.host.createSVGMatrix();
-        console.log(transform.numberOfItems);
         for (i$ = 0, to$ = transform.numberOfItems; i$ < to$; ++i$) {
           i = i$;
           mi = mi.multiply(transform.getItem(i).matrix);
@@ -513,7 +513,7 @@ var slice$ = [].slice;
         }
       }
       mat = (ref$ = this.host.createSVGMatrix(), ref$.a = a, ref$.b = b, ref$.c = c, ref$.d = d, ref$.e = e, ref$.f = f, ref$);
-      return this.tgt.map(function(it){
+      return this.tgt.map(function(it, i){
         var ref$, a, b, c, d, e, f;
         ref$ = it._mo.inverse().multiply(mat.multiply(it._mo)), a = ref$.a, b = ref$.b, c = ref$.c, d = ref$.d, e = ref$.e, f = ref$.f;
         return it.setAttribute('transform', ("matrix(" + a + " " + b + " " + c + " " + d + " " + e + " " + f + ")") + (it._mi ? " matrix(" + ['a', 'b', 'c', 'd', 'e', 'f'].map(function(k){
