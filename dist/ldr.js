@@ -88,6 +88,9 @@ var slice$ = [].slice;
       },
       downRoot: function(e){
         var n;
+        if (e.button > 0) {
+          return;
+        }
         if (!((n = e.target) && n.classList && !n.classList.contains('ldr-ctrl'))) {
           return this$.detach();
         }
@@ -109,7 +112,7 @@ var slice$ = [].slice;
       },
       downHost: function(e){
         var n, ref$, nx, ny;
-        if (!((n = e.target) && e.target.classList)) {
+        if (!((n = e.target) && e.target.classList) || e.button > 0) {
           return;
         }
         if (n.classList.contains('ldr-ctrl')) {
@@ -216,7 +219,10 @@ var slice$ = [].slice;
           if (ny === 2) {
             ref$ = [(p2[1] - p1[1]) / dim.h, dim.t.y + (cp[1] - pc.y)], dim.s.y = ref$[0], dim.t.y = ref$[1];
           }
-          this$.fire('resize', this$.dim);
+          this$.fire('resize', {
+            dim: this$.dim,
+            targets: this$.tgt
+          });
           return this$.render();
         }
       }

@@ -44,6 +44,8 @@
         document.removeEventListener \mouseup, mouse.up
         document.removeEventListener \mousemove, mouse.move
       down-root: (e) ~>
+        # only left click works. leave right click for context menu
+        if e.button > 0 => return
         if !( (n = e.target) and n.classList and !n.classList.contains(\ldr-ctrl) ) => return @detach!
         if n == root or (filter and !filter(n)) => return @detach!
         document.addEventListener \mouseup, mouse.up
@@ -56,7 +58,8 @@
 
 
       down-host: (e) ~>
-        if !((n = e.target) and e.target.classList) => return
+        # only left click works. leave right click for context menu
+        if !((n = e.target) and e.target.classList) or e.button > 0 => return
         if n.classList.contains(\ldr-ctrl) =>
           document.addEventListener \mouseup, mouse.up
           document.addEventListener \mousemove, mouse.move
@@ -187,7 +190,7 @@
           if nx == 2 => [dim.s.x, dim.t.x] = [(p2.0 - p1.0) / dim.w, dim.t.x + (cp.0 - pc.x)]
           if ny == 2 => [dim.s.y, dim.t.y] = [(p2.1 - p1.1) / dim.h, dim.t.y + (cp.1 - pc.y)]
 
-          @fire \resize, @dim
+          @fire \resize, {dim: @dim, targets: @tgt}
           return @render!
 
 
