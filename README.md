@@ -55,6 +55,14 @@ options:
  * on(name, callback(value)) - listen for specific event. currently available events:
      * resize - when resizing. affine transformation data provided.
 
+Additional interface:
+ * ```node._lasttransform``` - old transform attribute will be stored in this attribute of specific node when ldResize is going to overwrite it.
+   - currently, this is only done when _lasttransform is undefined.
+   - TODO: add opt for customize attr name and store timing?
+
+## Technical Note
+ * ldResize store transformation matrix for both parent and node in _mo and _mi member of an element. Also, old transform info is stored in _lasttransform. This is somewhat hacky, maybe we can find a better way to replace these in the future.
+
 
 ## Todo
  * Supporting non-preserving-aspect-ratio scaling in group resizing, which needs to deal with shearing.

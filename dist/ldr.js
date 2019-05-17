@@ -149,6 +149,10 @@ var slice$ = [].slice;
           ref$ = [dim.t.x + dx, dim.t.y + dy], dim.t.x = ref$[0], dim.t.y = ref$[1];
           mouse.ix = cx;
           mouse.iy = cy;
+          this$.fire('resize', {
+            dim: this$.dim,
+            targets: this$.tgt
+          });
           return this$.render();
         }
         ref$ = this$.pts(), pt = ref$.pt, pc = ref$.pc, pv = ref$.pv, mc = ref$.mc;
@@ -171,6 +175,10 @@ var slice$ = [].slice;
           if (e.shiftKey) {
             dim.r = Math.floor(dim.r / (Math.PI / 8)) * (Math.PI / 8);
           }
+          this$.fire('resize', {
+            dim: this$.dim,
+            targets: this$.tgt
+          });
           return this$.render();
         }
         if (mouse.n.classList.contains('s')) {
@@ -534,6 +542,9 @@ var slice$ = [].slice;
       return this.tgt.map(function(it, i){
         var ref$, a, b, c, d, e, f;
         ref$ = it._mo.inverse().multiply(mat.multiply(it._mo)), a = ref$.a, b = ref$.b, c = ref$.c, d = ref$.d, e = ref$.e, f = ref$.f;
+        if (!it._lasttransform) {
+          it._lasttransform = it.getAttribute('transform');
+        }
         return it.setAttribute('transform', ("matrix(" + a + " " + b + " " + c + " " + d + " " + e + " " + f + ")") + (it._mi ? " matrix(" + ['a', 'b', 'c', 'd', 'e', 'f'].map(function(k){
           return it._mi[k];
         }).join(' ') + ")" : ""));

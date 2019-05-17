@@ -90,6 +90,7 @@
           if e.shiftKey => [dx,dy] = if Math.abs(dx) > Math.abs(dy) => [dx, 0] else [0, dy]
           [dim.t.x, dim.t.y] = [dim.t.x + dx, dim.t.y + dy]
           mouse <<< ix: cx, iy: cy
+          @fire \resize, {dim: @dim, targets: @tgt}
           return @render!
 
         # when we use cx/cy for offset from ix/iy, we don't care where cx/cy actually are. ( moving around case )
@@ -123,6 +124,7 @@
           if v.1 < 0 => na = 2 * Math.PI - na
           dim.r += (na - a)
           if e.shiftKey => dim.r = Math.floor(dim.r / (Math.PI / 8)) * (Math.PI / 8)
+          @fire \resize, {dim: @dim, targets: @tgt}
           return @render!
 
         # scaling ctrl nodes ( .ldr-ctrl.s )
@@ -385,6 +387,7 @@
 
       @tgt.map (it,i)~>
         {a,b,c,d,e,f} = it._mo.inverse!multiply(mat.multiply(it._mo))
+        if !it._lasttransform => it._lasttransform = it.getAttribute \transform
         it.setAttribute \transform, (
           # affine transformation
           "matrix(#a #b #c #d #e #f)" +
