@@ -533,8 +533,8 @@ var slice$ = [].slice;
           vx = px - pc.x;
           vy = py - pc.y;
           len = Math.sqrt(Math.pow(vx, 2) + Math.pow(vy, 2));
-          px = px + vx * s / len - h * r;
-          py = py + vy * s / len - h * r;
+          px = px + (len ? vx * s / len - h * r : 0);
+          py = py + (len ? vy * s / len - h * r : 0);
           [['x', px], ['y', py], ['width', s * r], ['height', s * r]].map(fn1$);
         }
       }

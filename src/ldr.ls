@@ -373,8 +373,8 @@
           vx = (px - pc.x)
           vy = (py - pc.y)
           len = Math.sqrt(vx ** 2 + vy ** 2)
-          px = px + vx * s  / len - h * r
-          py = py + vy * s  / len - h * r
+          px = px + if len => vx * s / len - h * r else 0
+          py = py + if len => vy * s / len - h * r else 0
           [
             [\x, px]
             [\y, py]
