@@ -1,4 +1,4 @@
-ldr = new ldResize {host: svg, root: svg}
+ldr = new ldResize {host: svg2, root: svg}
 
 path = ld$.find document, 'path'
 #ldr.attach [path.6, path.0]

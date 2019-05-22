@@ -212,7 +212,10 @@
       if @host == @root => return {dx: 0, dy: 0}
       hbox = @host.getBoundingClientRect!
       rbox = @root.getBoundingClientRect!
-      {dx: rbox.x - hbox.x, dy: rbox.y - hbox.y}
+      # if root viewBox is not (0,0,...) then we need to adjust offset to compensate this.
+      rvb = @root.getAttribute(\viewBox)
+      [rvx, rvy, w, h] = if rvb => rvb.split(' ') else [0,0,0,0]
+      {dx: rbox.x - hbox.x - rvx, dy: rbox.y - hbox.y - rvy}
 
     attach: (n, plus = false) ->
       n = if Array.isArray(n) => n else [n]
@@ -228,6 +231,10 @@
         return _(n.parentNode).multiply(mat)
 
       at = s: {x: 1, y: 1}, r: 0, t: x: 0, y: 0
+      # if box is calculated based on rb, then the viewBox info is gone;
+      # so we restore it manually with rvx and rvy.
+      rvb = @root.getAttribute(\viewBox)
+      [rvx, rvy, w, h] = if rvb => rvb.split(' ').map(->+it) else [0,0,0,0]
 
       if @tgt.length > 1 =>
         # multiple targets. find containing box for them while consider their transform too.
@@ -242,7 +249,7 @@
           # create new matrix since firefox reuse consolidated matrix for new transform, which cause problem
           it._mi = @host.createSVGMatrix! <<< mat{a,b,c,d,e,f}
           it._mo = _(it.parentNode)
-        @dim.box = box = {x: b.x1 - rb.x, y: b.y1 - rb.y, w: b.x2 - b.x1, h: b.y2 - b.y1}
+        @dim.box = box = {x: b.x1 - rb.x + rvx, y: b.y1 - rb.y + rvy, w: b.x2 - b.x1, h: b.y2 - b.y1}
         [cx, cy] = [box.x + box.w / 2, box.y + box.h / 2]
         # transform for this box is always identity at the beginning, so we don't change "at"
         # TODO deduct common "at" from all tgts for better user experience?
@@ -277,7 +284,8 @@
             # still skewed with mi0. just use identity matrix as mc.
             # box dim must contains complete transformation
             b = @tgt.0.getBoundingClientRect!
-            @dim.box = box = {x: b.x - hb.x, y: b.y - hb.y, w: b.width, h: b.height}
+            #@dim.box = box = {x: b.x - hb.x, y: b.y - hb.y, w: b.width, h: b.height}
+            @dim.box = box = {x: b.x - rb.x + rvx, y: b.y - rb.y + rvy, w: b.width, h: b.height}
             [cx, cy] = [box.x + box.w / 2, box.y + box.h / 2]
             at.s <<< x: 1, y: 1
             at.t <<< x: 0, y: 0

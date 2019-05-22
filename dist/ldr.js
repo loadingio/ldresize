@@ -260,7 +260,7 @@ var slice$ = [].slice;
       return this.dim;
     },
     boxOffset: function(){
-      var hbox, rbox;
+      var hbox, rbox, rvb, ref$, rvx, rvy, w, h;
       if (this.host === this.root) {
         return {
           dx: 0,
@@ -269,13 +269,17 @@ var slice$ = [].slice;
       }
       hbox = this.host.getBoundingClientRect();
       rbox = this.root.getBoundingClientRect();
+      rvb = this.root.getAttribute('viewBox');
+      ref$ = rvb
+        ? rvb.split(' ')
+        : [0, 0, 0, 0], rvx = ref$[0], rvy = ref$[1], w = ref$[2], h = ref$[3];
       return {
-        dx: rbox.x - hbox.x,
-        dy: rbox.y - hbox.y
+        dx: rbox.x - hbox.x - rvx,
+        dy: rbox.y - hbox.y - rvy
       };
     },
     attach: function(n, plus){
-      var ref$, hb, rb, _, at, b, box, cx, cy, mo, nAlt, transform, mi, i$, to$, i, m, this$ = this;
+      var ref$, hb, rb, _, at, rvb, rvx, rvy, w, h, b, box, cx, cy, mo, nAlt, transform, mi, i$, to$, i, m, this$ = this;
       plus == null && (plus = false);
       n = Array.isArray(n)
         ? n
@@ -313,6 +317,12 @@ var slice$ = [].slice;
           y: 0
         }
       };
+      rvb = this.root.getAttribute('viewBox');
+      ref$ = rvb
+        ? rvb.split(' ').map(function(it){
+          return +it;
+        })
+        : [0, 0, 0, 0], rvx = ref$[0], rvy = ref$[1], w = ref$[2], h = ref$[3];
       if (this.tgt.length > 1) {
         b = {
           x1: null,
@@ -347,8 +357,8 @@ var slice$ = [].slice;
           return it._mo = _(it.parentNode);
         });
         this.dim.box = box = {
-          x: b.x1 - rb.x,
-          y: b.y1 - rb.y,
+          x: b.x1 - rb.x + rvx,
+          y: b.y1 - rb.y + rvy,
           w: b.x2 - b.x1,
           h: b.y2 - b.y1
         };
@@ -392,9 +402,10 @@ var slice$ = [].slice;
           }
           if (Math.pow(m.c - at.s.y * -Math.sin(at.r), 2) + Math.pow(m.d - at.s.y * Math.cos(at.r), 2) > 1e-5) {
             b = this.tgt[0].getBoundingClientRect();
+            console.log(rvx, rvy);
             this.dim.box = box = {
-              x: b.x - hb.x,
-              y: b.y - hb.y,
+              x: b.x - rb.x + rvx,
+              y: b.y - rb.y + rvy,
               w: b.width,
               h: b.height
             };

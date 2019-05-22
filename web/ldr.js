@@ -8,7 +8,7 @@ var slice$ = [].slice;
     return 180 * v / Math.PI;
   };
   ldResize = function(opt){
-    var host, root, filter, mouseDown, dim, ns, nr, ng, nb, mouse, this$ = this;
+    var host, root, filter, mousedown, dim, ns, nr, ng, nb, mouse, this$ = this;
     opt == null && (opt = {});
     host = !opt.host
       ? opt.root
@@ -24,7 +24,7 @@ var slice$ = [].slice;
         ? document.querySelector(opt.root)
         : opt.root : void 8,
       filter: filter = opt.filter || null,
-      mousedown: mouseDown = opt.mouseDown || null,
+      mousedown: mousedown = opt.mousedown || null,
       dim: dim = {
         s: {
           x: 1,
@@ -88,6 +88,9 @@ var slice$ = [].slice;
       },
       downRoot: function(e){
         var n;
+        if (e.button > 0) {
+          return;
+        }
         if (!((n = e.target) && n.classList && !n.classList.contains('ldr-ctrl'))) {
           return this$.detach();
         }
@@ -101,17 +104,15 @@ var slice$ = [].slice;
         mouse.nx = 1;
         mouse.ny = 1;
         mouse.n = nr[1];
-        console.log(this$.mouseDown);
-        if (this$.mouseDown) {
-          console.log('here');
-          return this$.attach(this$.mouseDown(e));
+        if (this$.mousedown) {
+          return this$.attach(this$.mousedown(e));
         } else if (!(this$.tgt.length && in$(n, this$.tgt))) {
           return this$.attach(n, e.shiftKey);
         }
       },
       downHost: function(e){
         var n, ref$, nx, ny;
-        if (!((n = e.target) && e.target.classList)) {
+        if (!((n = e.target) && e.target.classList) || e.button > 0) {
           return;
         }
         if (n.classList.contains('ldr-ctrl')) {
@@ -148,6 +149,10 @@ var slice$ = [].slice;
           ref$ = [dim.t.x + dx, dim.t.y + dy], dim.t.x = ref$[0], dim.t.y = ref$[1];
           mouse.ix = cx;
           mouse.iy = cy;
+          this$.fire('resize', {
+            dim: this$.dim,
+            targets: this$.tgt
+          });
           return this$.render();
         }
         ref$ = this$.pts(), pt = ref$.pt, pc = ref$.pc, pv = ref$.pv, mc = ref$.mc;
@@ -170,6 +175,10 @@ var slice$ = [].slice;
           if (e.shiftKey) {
             dim.r = Math.floor(dim.r / (Math.PI / 8)) * (Math.PI / 8);
           }
+          this$.fire('resize', {
+            dim: this$.dim,
+            targets: this$.tgt
+          });
           return this$.render();
         }
         if (mouse.n.classList.contains('s')) {
@@ -218,7 +227,10 @@ var slice$ = [].slice;
           if (ny === 2) {
             ref$ = [(p2[1] - p1[1]) / dim.h, dim.t.y + (cp[1] - pc.y)], dim.s.y = ref$[0], dim.t.y = ref$[1];
           }
-          this$.fire('resize', this$.dim);
+          this$.fire('resize', {
+            dim: this$.dim,
+            targets: this$.tgt
+          });
           return this$.render();
         }
       }
@@ -248,7 +260,7 @@ var slice$ = [].slice;
       return this.dim;
     },
     boxOffset: function(){
-      var hbox, rbox;
+      var hbox, rbox, rvb, ref$, rvx, rvy, w, h;
       if (this.host === this.root) {
         return {
           dx: 0,
@@ -257,13 +269,17 @@ var slice$ = [].slice;
       }
       hbox = this.host.getBoundingClientRect();
       rbox = this.root.getBoundingClientRect();
+      rvb = this.root.getAttribute('viewBox');
+      ref$ = rvb
+        ? rvb.split(' ')
+        : [0, 0, 0, 0], rvx = ref$[0], rvy = ref$[1], w = ref$[2], h = ref$[3];
       return {
-        dx: rbox.x - hbox.x,
-        dy: rbox.y - hbox.y
+        dx: rbox.x - hbox.x - rvx,
+        dy: rbox.y - hbox.y - rvy
       };
     },
     attach: function(n, plus){
-      var ref$, hb, rb, _, at, b, box, cx, cy, mo, nAlt, transform, mi, i$, to$, i, m, this$ = this;
+      var ref$, hb, rb, _, at, rvb, rvx, rvy, w, h, b, box, cx, cy, mo, nAlt, transform, mi, i$, to$, i, m, this$ = this;
       plus == null && (plus = false);
       n = Array.isArray(n)
         ? n
@@ -301,6 +317,12 @@ var slice$ = [].slice;
           y: 0
         }
       };
+      rvb = this.root.getAttribute('viewBox');
+      ref$ = rvb
+        ? rvb.split(' ').map(function(it){
+          return +it;
+        })
+        : [0, 0, 0, 0], rvx = ref$[0], rvy = ref$[1], w = ref$[2], h = ref$[3];
       if (this.tgt.length > 1) {
         b = {
           x1: null,
@@ -335,8 +357,8 @@ var slice$ = [].slice;
           return it._mo = _(it.parentNode);
         });
         this.dim.box = box = {
-          x: b.x1 - rb.x,
-          y: b.y1 - rb.y,
+          x: b.x1 - rb.x + rvx,
+          y: b.y1 - rb.y + rvy,
           w: b.x2 - b.x1,
           h: b.y2 - b.y1
         };
@@ -381,8 +403,8 @@ var slice$ = [].slice;
           if (Math.pow(m.c - at.s.y * -Math.sin(at.r), 2) + Math.pow(m.d - at.s.y * Math.cos(at.r), 2) > 1e-5) {
             b = this.tgt[0].getBoundingClientRect();
             this.dim.box = box = {
-              x: b.x - hb.x,
-              y: b.y - hb.y,
+              x: b.x - rb.x + rvx,
+              y: b.y - rb.y + rvy,
               w: b.width,
               h: b.height
             };
@@ -521,8 +543,8 @@ var slice$ = [].slice;
           vx = px - pc.x;
           vy = py - pc.y;
           len = Math.sqrt(Math.pow(vx, 2) + Math.pow(vy, 2));
-          px = px + vx * s / len - h * r;
-          py = py + vy * s / len - h * r;
+          px = px + (len ? vx * s / len - h * r : 0);
+          py = py + (len ? vy * s / len - h * r : 0);
           [['x', px], ['y', py], ['width', s * r], ['height', s * r]].map(fn1$);
         }
       }
@@ -530,6 +552,9 @@ var slice$ = [].slice;
       return this.tgt.map(function(it, i){
         var ref$, a, b, c, d, e, f;
         ref$ = it._mo.inverse().multiply(mat.multiply(it._mo)), a = ref$.a, b = ref$.b, c = ref$.c, d = ref$.d, e = ref$.e, f = ref$.f;
+        if (!it._lasttransform) {
+          it._lasttransform = it.getAttribute('transform');
+        }
         return it.setAttribute('transform', ("matrix(" + a + " " + b + " " + c + " " + d + " " + e + " " + f + ")") + (it._mi ? " matrix(" + ['a', 'b', 'c', 'd', 'e', 'f'].map(function(k){
           return it._mi[k];
         }).join(' ') + ")" : ""));
