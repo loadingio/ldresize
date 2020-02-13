@@ -402,7 +402,6 @@ var slice$ = [].slice;
           }
           if (Math.pow(m.c - at.s.y * -Math.sin(at.r), 2) + Math.pow(m.d - at.s.y * Math.cos(at.r), 2) > 1e-5) {
             b = this.tgt[0].getBoundingClientRect();
-            console.log(rvx, rvy);
             this.dim.box = box = {
               x: b.x - rb.x + rvx,
               y: b.y - rb.y + rvy,

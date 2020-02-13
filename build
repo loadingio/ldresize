@@ -8,5 +8,7 @@ echo "minifying ldr.js ..."
 ./node_modules/.bin/uglifyjs dist/ldr.js > dist/ldr.min.js
 echo "minifying ldr.css ..."
 ./node_modules/.bin/uglifycss dist/ldr.css > dist/ldr.min.css
+echo "deploy dist files to web..."
+mkdir -p web/static/assets/lib/ldr
+cp dist/* web/static/assets/lib/ldr
 echo "done."
-
