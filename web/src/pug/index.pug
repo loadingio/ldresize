@@ -1,15 +1,18 @@
 doctype html
 html
+  include /../../static/assets/lib/ldui/pug/ldui.pug
   head
     meta(charset="utf-8")
-    link(rel="stylesheet",type="text/css",href="index.css")
-    link(rel="stylesheet",type="text/css",href="ldr.css")
-    script(src="https://cdn.loading.io/ldQuery/latest/ldq.min.js")
+    +css("https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css")
+    +css("assets/lib/ldui/ldui.min.css")
+    +css("css/index.css")
+    +css("css/ldr.css")
   body
     svg#svg(style="width:800px;height:500px;background:#ff2f3",viewBox="100 0 800 500")
       include test.pug
     svg#svg2(style="position:absolute;top:40px;left:40px;width:800px;height:500px;",viewBox="0 0 800 500")
     div(style="height:2000px")
 
-    script(src="ldr.js")
-    script(src="index.js")
+    +script("assets/lib/ldui/ldui.min.js")
+    +script("js/ldr.js")
+    +script("js/index.js")
