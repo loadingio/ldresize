@@ -7,11 +7,16 @@ html
     +css("assets/lib/ldui/ldui.min.css")
     +css("assets/lib/ldr/ldr.css")
     +css("css/index.css")
-  body
-    svg#svg(style="width:800px;height:500px;background:#ff2f3",viewBox="100 0 800 500")
-      include test.pug
-    svg#svg2(style="position:absolute;top:40px;left:40px;width:800px;height:500px;",viewBox="0 0 800 500")
-    div(style="height:2000px")
+
+  body: .p-4
+    .w-1024.mx-auto.rwd.typeset.heading-contrast 
+      h1 ldResize
+      p a simple bounding box widget empowering users with the ability to move, rotate or scale anything.
+      br
+      .position-relative.w-100
+        svg#svg.border.rounded.w-100.shadow-sm.position-absolute(style="top:0;left:0;height:400px;background:#f9fbfd")
+          include svg.pug
+        svg#svg2.w-100(style="top:0;left:0;position:absolute;height:400px;")
 
     +script("assets/lib/ldui/ldui.min.js")
     +script("assets/lib/ldr/ldr.js")
