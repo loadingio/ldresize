@@ -1,15 +1,6 @@
 # ldResize
 
-A simple bounding box widget empowering users with the ability to move, rotate or scale anything. Expected Features:
-
- * Vanilla JS
- * works both for SVG or HTML ( SVG: ready, HTML: wip )
-   - auto parse transform attr/style for extracting current t/r/s.
-   - keep the flexibility of working also on Canvas. ( Todo )
- * incudes basic affine transformation
-   - can support shear, skew in SVG ? ( Todo )
- * auto transform target, but could also be set to manual
-   - then user should do it themselves from values of get-state.
+A simple bounding box widget empowering users with the ability to move, rotate or scale anything.
 
 
 ## Usage
@@ -42,7 +33,6 @@ configs are set in a object which is passed into the ldResize constructor. For e
  * host - CSS selector or element where to put resize widget elements. will use `root` if `host` is omitted.
  * root - CSS selector or element for the container of the elements to be resized.
    ldResize automatically intercept mouse events for elements in `root` and handle the interactions.
-   optional.
  * filter(n) - callback function to determine if an element `n` should be resized.
    ldResize by default resizes all elements if filter is omitted.
    called on mousedown on root element.
@@ -110,9 +100,26 @@ ldResize will add a set of SVG elements for controlling the resize of any elemen
 
 
 ## Todo
+
  * Supporting non-preserving-aspect-ratio scaling in group resizing, which needs to deal with shearing.
    - Illustrator just expand the transform into shape. Perhaps it's an feasible approach.
  * should we provide API for customizing before ldResize applying transformation over attached nodes?
+ * Support HTML
+   - currently we use features from SVG, such as SVGMatrix, node.transform.baseVal, etc so we don't support HTML.
+ * make `root` optional ( is this necessary? )
+ * resizing might lead to distortion. try to support resizing that is actually updating position of the underlying points, or only the input box ( e.g., for text box resizing )
+
+Expected Features:
+
+ * Vanilla JS
+ * works both for SVG or HTML ( SVG: ready, HTML: wip )
+   - auto parse transform attr/style for extracting current t/r/s.
+   - keep the flexibility of working also on Canvas. ( Todo )
+ * incudes basic affine transformation
+   - can support shear, skew in SVG ? ( Todo )
+ * auto transform target, but could also be set to manual
+   - then user should do it themselves from values of get-state.
+
 
 ## License
 

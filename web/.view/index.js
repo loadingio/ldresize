@@ -659,7 +659,7 @@ pug_html = pug_html + "a simple bounding box widget empowering users with the ab
 ;pug_debug_line = 15;pug_debug_filename = "src\u002Fpug\u002Findex.pug";
 pug_html = pug_html + "\u003Cbr\u003E";
 ;pug_debug_line = 16;pug_debug_filename = "src\u002Fpug\u002Findex.pug";
-pug_html = pug_html + "\u003Cdiv class=\"position-relative w-100\"\u003E";
+pug_html = pug_html + "\u003Cdiv class=\"position-relative w-100\" style=\"height:400px\"\u003E";
 ;pug_debug_line = 17;pug_debug_filename = "src\u002Fpug\u002Findex.pug";
 pug_html = pug_html + "\u003Csvg class=\"border rounded w-100 shadow-sm position-absolute\" id=\"svg\" style=\"top:0;left:0;height:400px;background:#f9fbfd\"\u003E";
 ;pug_debug_line = 2;pug_debug_filename = "src\u002Fpug\u002Fsvg.pug";
