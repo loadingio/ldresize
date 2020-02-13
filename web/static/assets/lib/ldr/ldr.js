@@ -278,13 +278,13 @@ var slice$ = [].slice;
         dy: rbox.y - hbox.y - rvy
       };
     },
-    attach: function(n, plus){
+    attach: function(n, append){
       var ref$, hb, rb, _, at, rvb, rvx, rvy, w, h, b, box, cx, cy, mo, nAlt, transform, mi, i$, to$, i, m, this$ = this;
-      plus == null && (plus = false);
+      append == null && (append = false);
       n = Array.isArray(n)
         ? n
         : [n];
-      this.tgt = !plus
+      this.tgt = !append
         ? n
         : this.tgt.concat(n.filter(function(it){
           return !in$(it, this$.tgt);

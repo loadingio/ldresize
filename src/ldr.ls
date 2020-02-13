@@ -217,9 +217,9 @@
       [rvx, rvy, w, h] = if rvb => rvb.split(' ') else [0,0,0,0]
       {dx: rbox.x - hbox.x - rvx, dy: rbox.y - hbox.y - rvy}
 
-    attach: (n, plus = false) ->
+    attach: (n, append = false) ->
       n = if Array.isArray(n) => n else [n]
-      @tgt = if !plus => n else @tgt ++ n.filter ~> !(it in @tgt)
+      @tgt = if !append => n else @tgt ++ n.filter ~> !(it in @tgt)
       if !@tgt.length => return @detach!
       @n.g.style.display = \block
       [hb,rb] = [@host, @root].map -> it.getBoundingClientRect!
