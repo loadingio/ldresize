@@ -4,6 +4,9 @@
   "license": "MIT",
   "description": "Resize widget for anything",
   "version": "0.0.2",
+  "files": [
+    "dist/**/*"
+  ],
   "homepage": "https://github.com/loadingio/ldResize",
   "repository": {
     "type": "git",
