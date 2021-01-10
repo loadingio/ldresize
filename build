@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
+rm -rf dist
 mkdir -p dist
 echo "build src/ldr.ls -> dist/ldr.js ..."
-./node_modules/.bin/lsc -cbp src/ldr.ls > dist/ldr.js
+npx lsc -cp --no-header src/ldr.ls > dist/ldr.js
 echo "build src/ldr.styl -> dist/ldr.css ..."
-./node_modules/.bin/stylus -p src/ldr.styl > dist/ldr.css
+npx stylus -p src/ldr.styl > dist/ldr.css
 echo "minifying ldr.js ..."
-./node_modules/.bin/uglifyjs dist/ldr.js > dist/ldr.min.js
+npx uglifyjs dist/ldr.js > dist/ldr.min.js
 echo "minifying ldr.css ..."
-./node_modules/.bin/uglifycss dist/ldr.css > dist/ldr.min.css
+npx uglifycss dist/ldr.css > dist/ldr.min.css
 echo "deploy dist files to web..."
-mkdir -p web/static/assets/lib/ldr
-cp dist/* web/static/assets/lib/ldr
+rm -rf web/static/assets/lib/ldresize/dev
+mkdir -p web/static/assets/lib/ldresize/dev
+cp dist/* web/static/assets/lib/ldresize/dev
 echo "done."

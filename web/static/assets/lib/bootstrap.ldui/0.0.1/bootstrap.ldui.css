@@ -1,101 +1,3 @@
-#nav-top {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  z-index: 2000;
-}
-#nav-top nav {
-  padding: 0.5rem 2rem;
-  transition: background 0.3s ease-in, color 0.3s ease-in;
-}
-#nav-top-placeholder {
-  height: 63px;
-}
-.avatar {
-  width: 1em;
-  height: 1em;
-  vertical-align: -0.25em;
-  display: inline-block;
-  border-radius: 0.25em;
-  background-color: #ccc;
-  background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
-}
-.avatar.avatar-lg {
-  width: 1.25em;
-  height: 1.25em;
-  vertical-align: -0.25em;
-  display: inline-block;
-  border-radius: 0.25em;
-}
-.avatar.avatar-sm {
-  width: 0.875em;
-  height: 0.875em;
-  vertical-align: middle;
-}
-.closebtn {
-  position: absolute;
-  top: 0;
-  right: 0;
-  font-size: 1.5em;
-  line-height: 0.5em;
-  margin: 0 0;
-  padding: 0.2em 0.25em 0.3em;
-  cursor: pointer;
-  z-index: 1003;
-}
-.closebtn:after {
-  content: "\0000d7";
-  display: inline;
-}
-.closebtn.sm {
-  font-size: 1em;
-}
-.closebtn.lg {
-  font-size: 2.5em;
-}
-.closebtn.xl {
-  font-size: 3.5em;
-}
-.alert .closebtn {
-  bottom: 0;
-  margin-top: auto;
-  margin-bottom: auto;
-  height: 0.66em;
-  padding-top: 0;
-}
-.has-protip .dropdown-menu > .inner {
-  height: 300px;
-  overflow: scroll;
-}
-.ldcv .protip,
-.dropdown .protip,
-.dropup .protip {
-  position: absolute;
-  bottom: 0;
-  margin: 0;
-  text-align: center;
-  text-decoration: underline;
-  cursor: pointer;
-}
-.dropdown-menu .protip {
-  border-radius: 0;
-  margin: 0 0 -5px 0;
-  width: 100%;
-}
-.has-protip.ldcv .protip {
-  max-width: 480px;
-  width: 90%;
-  bottom: 10px;
-  text-align: center;
-  margin: auto;
-  left: 0;
-  right: 0;
-}
-.has-protip.ldcv .protip .btn {
-  margin: 0 10px;
-}
 .btn.has-tips,
 .has-tips {
   position: relative;
@@ -342,28 +244,6 @@
 .input-group .dropdown-menu {
   width: 100%;
 }
-.ldNotify {
-  position: fixed;
-  pointer-events: none;
-  z-index: 5002;
-  top: 50px;
-  margin: auto;
-  left: 0;
-  right: 0;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  flex-wrap: nowrap;
-  align-items: center;
-}
-.ldNotify .alert {
-  min-width: 200px;
-  text-align: center;
-  box-shadow: 0 1px 1px rgba(0,0,0,0.2);
-  display: inline-block;
-  flex: 0 0 auto;
-  border: 1px solid currentColor;
-}
 .sep {
   margin: 1em auto;
   border-top: 1px solid rgba(0,0,0,0.1);
@@ -472,22 +352,41 @@
   height: 100%;
   border: 0;
 }
-body > .foot {
-  color: #fff;
-  background: #102030;
+.switch {
+  cursor: pointer;
+  border: 1px solid #ccc;
+  padding: 1px;
+  border-radius: 1.75em;
+  width: 2.25em;
+  background: #edeeef;
+  transition: background 0.15s ease-in-out;
 }
-body > .foot .inner {
-  max-width: 1024px;
-  margin: auto;
-  width: 90%;
-  padding: 40px 0 80px;
+.switch:after {
+  content: " ";
+  display: block;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  width: 1em;
+  height: 1em;
+  background: #fff;
+  transition: all 0.15s ease-in-out;
+  left: 0%;
+  transform: translate(0%, 0);
+  position: relative;
 }
-body > .foot .icon {
-  margin: 5px 15px 0 0;
-  vertical-align: middle;
+.switch.on {
+  background: #00ff7b;
 }
-body > .foot .icon i {
-  font-size: 24px;
+.switch.on:after {
+  left: 100%;
+  transform: translate(-100%, 0);
+}
+.switch.switch-lg {
+  width: 3.25em;
+}
+.switch.switch-lg:after {
+  width: 1.75em;
+  height: 1.75em;
 }
 .text-sm {
   font-size: 0.8em;
@@ -497,9 +396,6 @@ body > .foot .icon i {
 }
 .text-xl {
   font-size: 2em;
-}
-.cap-fl {
-  text-transform: capitalize;
 }
 .no-select {
   user-select: none;
@@ -517,9 +413,6 @@ body > .foot .icon i {
 }
 .text-underline {
   text-decoration: underline;
-}
-.text-no-deco {
-  text-decoration: none !important;
 }
 .text-bg-clip {
   color: currentColor;
@@ -696,6 +589,11 @@ a.disabled {
   width: 100%;
   height: 100%;
 }
+.flex-placeholder {
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+}
 .bg-lighter {
   background-color: #fcfdfd;
 }
@@ -705,32 +603,14 @@ a.disabled {
 .bg-semi-dark {
   background-color: rgba(0,0,0,0.6);
 }
-.bg-image {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background-position: center center;
-  top: 0;
-  z-index: -1;
-  background-repeat: no-repeat;
-  background-size: cover;
+.bg-no-repeat {
+  background-position: center center !important;
 }
-.bg-image.bg-tile {
-  background-repeat: repeat;
-  background-size: 256px;
-  height: 300px;
-  top: 50%;
-  margin-top: -150px;
+.bg-center {
+  background-position: center center !important;
 }
 .bg-fixed {
-  background-attachment: fixed;
-}
-.bg-cover {
-  background-size: cover;
-}
-.bg-portrait {
-  background-position: center center;
-  background-repeat: no-repeat;
+  background-attachment: fixed !important;
 }
 .bg-cover {
   background-size: cover !important;
@@ -751,56 +631,6 @@ a.disabled {
 .dropdown-menu .dropdown-item {
   outline: none;
 }
-.invoice-list .invoice-item.head {
-  font-weight: 900;
-  background: #eee;
-}
-.invoice-list .invoice-item {
-  background: #fff;
-  padding: 4px 0;
-  border-top: 1px solid #f1f2f3;
-}
-.invoice-list .invoice-item.dispute .datetime,
-.invoice-list .invoice-item.dispute .name,
-.invoice-list .invoice-item.dispute .amount,
-.invoice-list .invoice-item.dispute .payment,
-.invoice-list .invoice-item.dispute .payer,
-.invoice-list .invoice-item.dispute .invoice {
-  color: #d21;
-}
-.invoice-list .invoice-item.refunded .datetime,
-.invoice-list .invoice-item.refunded .name,
-.invoice-list .invoice-item.refunded .amount,
-.invoice-list .invoice-item.refunded .payment,
-.invoice-list .invoice-item.refunded .payer,
-.invoice-list .invoice-item.refunded .invoice {
-  text-decoration: line-through;
-  color: #999;
-}
-.invoice-list .invoice-item .datetime,
-.invoice-list .invoice-item .name,
-.invoice-list .invoice-item .amount,
-.invoice-list .invoice-item .payment,
-.invoice-list .invoice-item .payer,
-.invoice-list .invoice-item .invoice {
-  padding: 5px 10px;
-  display: inline-block;
-}
-.invoice-list .invoice-item .datetime {
-  width: 180px;
-}
-.invoice-list .invoice-item .name {
-  width: 335px;
-  vertical-align: top;
-}
-.invoice-list .invoice-item .amount {
-  width: 180px;
-  text-align: right;
-}
-.invoice-list .invoice-item .invoice {
-  width: 80px;
-  text-align: center;
-}
 .paper {
   padding: 11mm 15mm 11mm;
   margin: 20px auto;
@@ -810,45 +640,7 @@ a.disabled {
   border: 1px solid #ccc;
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
-.paper-ctrl {
-  width: 210mm;
-  margin: 20px auto 0;
-}
-.invoice.cover-modal-wrapper {
-  position: absolute;
-}
-.invoice.cover-modal-wrapper .cover-modal {
-  position: fixed;
-}
-.invoice.cover-modal-wrapper .cover-modal-inner {
-  width: 210mm;
-}
-.invoice table {
-  width: 100%;
-  border-radius: 2px;
-  margin-bottom: 5px;
-}
-.invoice table td {
-  border-left: 1px solid #ccc;
-  border-top: 1px solid #ccc;
-  padding: 1.5mm 0;
-}
-.invoice table tr:last-child td {
-  border-bottom: 1px solid #ccc;
-}
-.invoice table tr td:last-child {
-  border-right: 1px solid #ccc;
-}
-.invoice table tr:first-child td {
-  background: #f9f9f9;
-}
-.invoice table tr td:first-child {
-  text-align: left;
-  padding-left: 2mm;
-  padding-right: 2mm;
-}
 @media print {
-  html,
   body.for-print {
     font-size: 20px;
     width: 100%;
@@ -856,11 +648,11 @@ a.disabled {
     margin: 0;
   }
   .paper {
+    padding: 21mm 25mm 21mm;
+    margin: 0;
     width: 100%;
     height: 100%;
     border: 0;
-    margin: 0;
-    padding: 21mm 25mm 21mm;
     box-shadow: none;
   }
   .print-hide {
@@ -992,25 +784,6 @@ a.disabled {
 .typeset.heading-contrast .sect:not(:first-child) > h6 {
   margin-top: 1.75rem;
 }
-ul.icon-bullet {
-  padding-left: 0;
-}
-ul.icon-bullet li {
-  list-style: none;
-}
-ul.icon-bullet li:before {
-  content: "\f00d";
-  display: inline;
-  font-family: ldi;
-  font-size: 0.8em;
-  color: #25bc32;
-  margin-right: 0.5em;
-}
-ul.icon-bullet.custom li i {
-  font-size: 0.8em;
-  color: #25bc32;
-  margin-right: 5px;
-}
 input.form-control:focus {
   box-shadow: 0 0 2px rgba(0,255,255,0.5) !important;
 }
@@ -1103,12 +876,8 @@ pre {
 .z-notify {
   z-index: 5000;
 }
-.ldap > .base > .inner .item.limited {
-  text-decoration: none !important;
-}
-.ldap > .base > .inner .item.limited > div:first-child:after {
-  content: "\f011" !important;
-  font-family: ldi;
+.z-max {
+  z-index: 99999999 !important;
 }
 .btn,
 .dropdown-item,
