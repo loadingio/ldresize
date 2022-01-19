@@ -8,6 +8,8 @@
  - release with compact directory structure
  - add `main` and `browser` field in `package.json`.
  - further minimie generated js file with mangling and compression
+ - remove assets files from git
+ - patch test code to make it work with upgraded modules
 
 
 ## v0.0.2
