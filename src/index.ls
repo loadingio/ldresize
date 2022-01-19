@@ -2,7 +2,7 @@ svg = \http://www.w3.org/2000/svg
 cs = <[#ff0 #0ff #f0f #fff]>
 deg = (v) -> 180 * v / Math.PI
 
-ldResize = (opt = {}) ->
+ldresize = (opt = {}) ->
   # initialization
   host = if !opt.host => opt.root else opt.host
   @ <<< do
@@ -200,7 +200,7 @@ ldResize = (opt = {}) ->
 
   @
 
-ldResize.prototype = Object.create(Object.prototype) <<< do
+ldresize.prototype = Object.create(Object.prototype) <<< do
   on: (n, cb) -> @evt-handler.[][n].push cb
   fire: (n, ...v) -> for cb in (@evt-handler[n] or []) => cb.apply @, v
   set: ->
@@ -402,5 +402,5 @@ ldResize.prototype = Object.create(Object.prototype) <<< do
         if it._mi => " matrix(#{<[a b c d e f]>.map((k)->it._mi[k]).join(' ')})" else ""
       )
 
-if module? => module.exports = ldResize
-if window => window.ldResize = ldResize
+if module? => module.exports = ldresize
+else if window? => window.ldresize = ldresize

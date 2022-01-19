@@ -1,11 +1,11 @@
 doctype html
 html
-  include /../../static/assets/lib/bootstrap.ldui/main/index.pug
+  include @/@loadingio/bootstrap.ext/index.pug
   head
     meta(charset="utf-8")
-    +css("assets/lib/bootstrap/main/css/bootstrap.min.css")
-    +css("assets/lib/bootstrap.ldui/main/bootstrap.ldui.min.css")
-    +css("assets/lib/ldresize/dev/ldr.css")
+    +css("assets/lib/bootstrap/main/dist/css/bootstrap.min.css")
+    +css("assets/lib/@loadingio/bootstrap.ext/main/index.min.css")
+    +css("assets/lib/ldresize/dev/index.min.css")
     +css("css/index.css")
 
   body: .p-4
@@ -18,5 +18,6 @@ html
           include svg.pug
         svg#svg2.w-100(style="top:0;left:0;position:absolute;height:400px;")
 
-    +script("assets/lib/ldresize/dev/ldr.js")
+    +script("assets/lib/@loadingio/ldquery/main/index.min.js")
+    +script("assets/lib/ldresize/dev/index.min.js")
     +script("js/index.js")

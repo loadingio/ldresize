@@ -1,4 +1,4 @@
-# ldResize
+# ldresize
 
 A simple bounding box widget empowering users with the ability to move, rotate or scale anything.
 
@@ -6,7 +6,7 @@ A simple bounding box widget empowering users with the ability to move, rotate o
 ## Usage
 
     # create a new ldr instance.
-    ldr = new ldResize ...
+    ldr = new ldresize ...
 
     # attach to certain node.
     ldr.attach node
@@ -19,18 +19,18 @@ A simple bounding box widget empowering users with the ability to move, rotate o
 
 ## Configuration
 
-configs are set in a object which is passed into the ldResize constructor. For example:
+configs are set in a object which is passed into the ldresize constructor. For example:
 
-    new ldResize({root: ".root"});
+    new ldresize({root: ".root"});
 
 
 ## Configuration
 
  * `host` - CSS selector or element where to put resize widget elements. will use `root` if `host` is omitted.
  * `root` - CSS selector or element for the container of the elements to be resized.
-   ldResize automatically intercept mouse events for elements in `root` and handle the interactions.
+   ldresize automatically intercept mouse events for elements in `root` and handle the interactions.
  * `filter(n)` - callback function to determine if an element `n` should be resized.
-   ldResize by default resizes all elements if filter is omitted.
+   ldresize by default resizes all elements if filter is omitted.
    called on mousedown on root element.
  * `mousedown` - TBD
  * `visible-ctrl-r` - default false. show all rotating ctrl node if true.
@@ -67,7 +67,7 @@ configs are set in a object which is passed into the ldResize constructor. For e
 
 ## Widget Hierarchy
 
-ldResize will add a set of SVG elements for controlling the resize of any elements. This reizer widget is constructed with following structure:
+ldresize will add a set of SVG elements for controlling the resize of any elements. This reizer widget is constructed with following structure:
 
  * g
    - path.ldr-ctrl.bbox
@@ -88,17 +88,17 @@ ldResize will add a set of SVG elements for controlling the resize of any elemen
 ## Technical Note
 
  * Additional interface:
-   * `node._lasttransform` - old transform attribute will be stored in this attribute of specific node when ldResize is going to overwrite it.
+   * `node._lasttransform` - old transform attribute will be stored in this attribute of specific node when ldresize is going to overwrite it.
      - currently, this is only done when _lasttransform is undefined.
      - TODO: add opt for customize attr name and store timing?
- * ldResize store transformation matrix for both parent and node in `_mo` and `_mi` member of an element. Also, old transform info is stored in `_lasttransform`. This is somewhat hacky, maybe we can find a better way to replace these in the future.
+ * ldresize store transformation matrix for both parent and node in `_mo` and `_mi` member of an element. Also, old transform info is stored in `_lasttransform`. This is somewhat hacky, maybe we can find a better way to replace these in the future.
 
 
 ## Todo
 
  * Supporting non-preserving-aspect-ratio scaling in group resizing, which needs to deal with shearing.
    - Illustrator just expand the transform into shape. Perhaps it's an feasible approach.
- * should we provide API for customizing before ldResize applying transformation over attached nodes?
+ * should we provide API for customizing before ldresize applying transformation over attached nodes?
  * Support HTML
    - currently we use features from SVG, such as SVGMatrix, node.transform.baseVal, etc so we don't support HTML.
  * make `root` optional ( is this necessary? )

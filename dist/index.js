@@ -1,11 +1,11 @@
 (function(){
-  var svg, cs, deg, ldResize;
+  var svg, cs, deg, ldresize;
   svg = 'http://www.w3.org/2000/svg';
   cs = ['#ff0', '#0ff', '#f0f', '#fff'];
   deg = function(v){
     return 180 * v / Math.PI;
   };
-  ldResize = function(opt){
+  ldresize = function(opt){
     var host, root, filter, mousedown, dim, ns, nr, ng, nb, mouse, this$ = this;
     opt == null && (opt = {});
     host = !opt.host
@@ -239,7 +239,7 @@
     }
     return this;
   };
-  ldResize.prototype = import$(Object.create(Object.prototype), {
+  ldresize.prototype = import$(Object.create(Object.prototype), {
     on: function(n, cb){
       var ref$;
       return ((ref$ = this.evtHandler)[n] || (ref$[n] = [])).push(cb);
@@ -570,10 +570,9 @@
     }
   });
   if (typeof module != 'undefined' && module !== null) {
-    module.exports = ldResize;
-  }
-  if (window) {
-    window.ldResize = ldResize;
+    module.exports = ldresize;
+  } else if (typeof window != 'undefined' && window !== null) {
+    window.ldresize = ldresize;
   }
   function import$(obj, src){
     var own = {}.hasOwnProperty;
