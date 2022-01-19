@@ -3,7 +3,8 @@
   "name": "ldresize",
   "license": "MIT",
   "description": "Resize widget for anything",
-  "version": "0.0.3",
+  "version": "0.0.4",
+  "style": "dist/index.min.css",
   "browser": "dist/index.min.js",
   "main": "dist/index.min.js",
   "files": [

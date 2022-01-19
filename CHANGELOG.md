@@ -1,5 +1,10 @@
 # Change Logs
 
+## v0.0.4
+
+ - add `style` field in `package.json`
+
+
 ## v0.0.3
 
  - rename `ldResize` to `ldresize`
