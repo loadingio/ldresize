@@ -23,11 +23,11 @@
     "start": "npx server -r web -o true"
   },
   "devDependencies": {
-    "@loadingio/bootstrap.ext": "^0.0.4",
-    "@loadingio/ldquery": "^3.0.1",
-    "@zbryikt/template": "^2.3.33",
-    "bootstrap": "^4.5.3",
-    "fedep": "^1.1.0",
+    "@loadingio/bootstrap.ext": "^0.0.12",
+    "@loadingio/ldquery": "^3.0.6",
+    "@zbryikt/template": "^2.4.1",
+    "bootstrap": "^4.6.1",
+    "fedep": "^1.3.0",
     "livescript": "^1.6.0",
     "stylus": "^0.55.0",
     "uglify-js": "^3.13.1",
